@@ -178,6 +178,7 @@ public class Axis {
 
     public void draw(Canvas canvas) {
         drawLine(canvas);
+        drawTicks(canvas);
     }
 
     private void drawLine(Canvas canvas) {
@@ -195,5 +196,33 @@ public class Axis {
         }
 
         canvas.drawLine(startX, startY, endX, endY, paint);
+    }
+
+    private void drawTicks(Canvas canvas) {
+        if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
+            drawVerticalTicks(canvas);
+        } else {
+            drawHorizontalTicks(canvas);
+        }
+    }
+
+    private void drawHorizontalTicks(Canvas canvas) {
+        float outerX = offsetX - outerTickSize / 2;
+        float innerX = offsetX + innerTickSize / 2;
+        for (int i = 0; i < ticksNumber; i++) {
+            float coordinateY = offsetY + lastBoundRange() * i / (ticksNumber - 1.0f)
+                + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+            canvas.drawLine(outerX, coordinateY, innerX, coordinateY, paint);
+        }
+    }
+
+    private void drawVerticalTicks(Canvas canvas) {
+        float outerY = offsetY + outerTickSize / 2;
+        float innerY = offsetY - innerTickSize / 2;
+        for (int i = 0; i < ticksNumber; i++) {
+            float coordinateX = offsetX + lastBoundRange() * i / (ticksNumber - 1.0f)
+                + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+            canvas.drawLine(coordinateX, innerY, coordinateX, outerY, paint);
+        }
     }
 }
