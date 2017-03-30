@@ -33,6 +33,10 @@ public class Scale {
         }
     }
 
+    public float[] domain() {
+        return domain.clone();
+    }
+
     public Scale domain(float[] domain) {
         verifyParametersValidity(domain, range);
         if (domain != null && domain.length < 2) {
@@ -44,6 +48,10 @@ public class Scale {
             this.domain = domain.clone();
         }
         return this;
+    }
+
+    public float[] range() {
+        return range.clone();
     }
 
     public Scale range(float[] range) {
