@@ -4,6 +4,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
+import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.scale.Scale;
 
@@ -28,9 +29,12 @@ public class Axis {
     private Paint paint;
     private Paint textPaint;
 
+    private LegendProperties legendProperties;
+
     public Axis(AxisOrientation orientation, Scale scale) {
         this.orientation = orientation;
         this.scale = scale;
+        this.legendProperties = new LegendProperties();
         setUpPaints();
     }
 
@@ -42,6 +46,12 @@ public class Axis {
 
         textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
         textPaint.setStyle(Paint.Style.FILL);
+        setupTextPaint();
+    }
+
+    private void setupTextPaint() {
+        textPaint.setColor(legendProperties.color());
+        textPaint.setTextSize(legendProperties.textSizeInPixels());
     }
 
     /***
@@ -174,6 +184,127 @@ public class Axis {
     private float lastBoundRange() {
         float[] range = scale.range();
         return range[range.length - 1];
+    }
+
+    /***
+     * @return the legendProperties use for legends
+     */
+    public LegendProperties legendProperties() {
+        return legendProperties;
+    }
+
+    /***
+     * Set the legendProperties to use. If null, use the default one.
+     */
+    public Axis legendProperties(@Nullable LegendProperties legendProperties) {
+        if (legendProperties == null) {
+            this.legendProperties = new LegendProperties();
+        } else {
+            this.legendProperties = legendProperties;
+        }
+        setupTextPaint();
+        return this;
+    }
+
+    /***
+     * @return the legend's text size
+     */
+    public float textSizeInPixels() {
+        return legendProperties.textSizeInPixels();
+    }
+
+    /***
+     * Set the legend's text size
+     */
+    public Axis textSizeInPixels(float textSizeInPixels) {
+        legendProperties.textSizeInPixels(textSizeInPixels);
+        setupTextPaint();
+        return this;
+    }
+
+    /***
+     * @return the legend's color
+     */
+    public @ColorInt int legendColor() {
+        return legendProperties.color();
+    }
+
+    /***
+     * Set the legend's color
+     */
+    public Axis legendColor(@ColorInt int color) {
+        legendProperties.color(color);
+        setupTextPaint();
+        return this;
+    }
+
+    /***
+     * @return the legend's vertical alignment
+     */
+    public VerticalAlignment legendVerticalAlignment() {
+        return legendProperties.verticalAlignement();
+    }
+
+    /***
+     * set the legend's vertical alignment for a vertical Axis
+     */
+    public Axis legendVerticalAlignment(VerticalAlignment verticalAlignment) {
+        legendProperties.verticalAlignement(verticalAlignment);
+        return this;
+    }
+
+    /***
+     * @return the legend's horizontal alignment
+     */
+    public HorizontalAlignment legendHorizontalAlignment() {
+        return legendProperties.horizontalAlignement();
+    }
+
+    /***
+     * set the legend's horizontal alignment for a horizontal Axis
+     */
+    public Axis legendHorizontalAlignment(HorizontalAlignment horizontalAlignment) {
+        legendProperties.horizontalAlignement(horizontalAlignment);
+        return this;
+    }
+
+    /***
+     * @return the legend's horizontal offset
+     */
+    public float legendOffsetX() {
+        return legendProperties.offsetX();
+    }
+
+    /***
+     * set the legend's horizontal offset
+     */
+    public Axis legendOffsetX(float offsetX) {
+        legendProperties.offsetX(offsetX);
+        return this;
+    }
+
+    /***
+     * @return the legend's vertical offset
+     */
+    public float legendOffsetY() {
+        return legendProperties.offsetY();
+    }
+
+    /***
+     * set the legend's vertical offset
+     */
+    public Axis legendOffsetY(float offsetY) {
+        legendProperties.offsetY(offsetY);
+        return this;
+    }
+
+    /***
+     * set the legend's offsets
+     */
+    public Axis legendOffset(float offsetX, float offsetY) {
+        legendProperties.offsetX(offsetX);
+        legendProperties.offsetY(offsetY);
+        return this;
     }
 
     public void draw(Canvas canvas) {
