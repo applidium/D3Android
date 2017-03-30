@@ -1,6 +1,8 @@
 package com.applidium.pierreferrand.d3library.scale;
 
 public class Scale {
+    private final static int DEFAULT_TICK_NUMBER = 10;
+
     private float[] domain;
     private float[] range;
 
@@ -84,5 +86,29 @@ public class Scale {
 
     public Scale copy() {
         return new Scale(domain, range, interpolator);
+    }
+
+    public float[] ticks() {
+        return ticks(DEFAULT_TICK_NUMBER);
+    }
+
+    public float[] ticks(int count) {
+        if (domain == null) {
+            throw new IllegalStateException("Domain should not be null");
+        }
+        float ticks[] = new float[count];
+        if (count == 1) {
+            ticks[0] = (domain[0] + domain[domain.length - 1]) / 2;
+            return ticks;
+        }
+
+        for (int i = 1; i < count - 1; i++) {
+            ticks[i] = i * domain[domain.length - 1] / (count - 1)
+                + (count - 1 - i) * domain[0] / (count - 1);
+        }
+        ticks[0] = domain[0];
+        ticks[count - 1] = domain[domain.length - 1];
+
+        return ticks;
     }
 }
