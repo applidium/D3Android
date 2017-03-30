@@ -3,6 +3,7 @@ package com.applidium.pierreferrand.d3library.axes;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 
@@ -310,6 +311,7 @@ public class Axis {
     public void draw(Canvas canvas) {
         drawLine(canvas);
         drawTicks(canvas);
+        drawTicksLegend(canvas);
     }
 
     private void drawLine(Canvas canvas) {
@@ -354,6 +356,92 @@ public class Axis {
             float coordinateX = offsetX + lastBoundRange() * i / (ticksNumber - 1.0f)
                 + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
             canvas.drawLine(coordinateX, innerY, coordinateX, outerY, paint);
+        }
+    }
+
+    private void drawTicksLegend(Canvas canvas) {
+        if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
+            drawHorizontalLegend(canvas);
+        } else {
+            drawVerticalLegend(canvas);
+        }
+    }
+
+    private void drawVerticalLegend(Canvas canvas) {
+        float[] usableTicks = this.ticks == null ? scale.ticks(this.ticksNumber) : this.ticks;
+        float coordinateX = orientation == AxisOrientation.LEFT ?
+            offsetX - innerTickSize : offsetX + innerTickSize;
+        coordinateX += legendProperties.offsetX();
+
+        for (int i = 0; i < usableTicks.length; i++) {
+            drawSingleVerticalLegend(canvas, usableTicks[i], coordinateX, i);
+        }
+    }
+
+    private void drawSingleVerticalLegend(Canvas canvas, float tick, float coordinateX, int i) {
+        float coordinateY = offsetY + lastBoundRange() * i / (ticksNumber - 1.0f)
+            + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+        coordinateY += legendProperties.offsetY();
+        coordinateY += alignmentVerticalOffset(Float.toString(tick));
+        coordinateX -= orientation == AxisOrientation.LEFT ?
+            textPaint.measureText(Float.toString(tick)) : 0;
+
+        canvas.drawText(Float.toString(tick), coordinateX, coordinateY, textPaint);
+    }
+
+    private float alignmentVerticalOffset(String legend) {
+        float height = getTextHeight(legend);
+        switch (legendProperties.verticalAlignement()) {
+            case BOTTOM:
+                return height;
+            case CENTER:
+                return height / 2.0f;
+            default:
+                return 0.0f;
+        }
+    }
+
+    private float getTextHeight(String legend) {
+        Rect bounds = new Rect();
+        textPaint.getTextBounds(legend, 0, legend.length(), bounds);
+        return (float) bounds.height();
+    }
+
+    private void drawHorizontalLegend(Canvas canvas) {
+        float[] usableTicks = this.ticks == null ? scale.ticks(this.ticksNumber) : this.ticks;
+        float coordinateY = orientation == AxisOrientation.TOP ?
+            offsetY - innerTickSize : offsetY + innerTickSize;
+        coordinateY += legendProperties.offsetY();
+
+        for (int i = 0; i < usableTicks.length; i++) {
+            drawSingleHorizontalLegend(canvas, usableTicks, coordinateY, i);
+        }
+    }
+
+    private void drawSingleHorizontalLegend(
+        Canvas canvas,
+        float[] ticks,
+        float coordinateY,
+        int i
+    ) {
+        float coordinateX = offsetX + lastBoundRange() * i / (ticksNumber - 1.0f)
+            + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+        coordinateX += legendProperties.offsetX();
+        coordinateX -= alignmentHorizontalOffset(Float.toString(ticks[i]));
+        coordinateY += orientation == AxisOrientation.TOP ? 0 :
+            getTextHeight(Float.toString(ticks[i]));
+
+        canvas.drawText(Float.toString(ticks[i]), coordinateX, coordinateY, textPaint);
+    }
+
+    private float alignmentHorizontalOffset(String legend) {
+        switch (legendProperties.horizontalAlignement()) {
+            case LEFT:
+                return textPaint.measureText(legend);
+            case CENTER:
+                return textPaint.measureText(legend) / 2.0f;
+            default:
+                return 0.0f;
         }
     }
 }
