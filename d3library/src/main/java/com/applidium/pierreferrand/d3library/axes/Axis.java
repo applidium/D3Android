@@ -1,5 +1,6 @@
 package com.applidium.pierreferrand.d3library.axes;
 
+import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
@@ -173,5 +174,26 @@ public class Axis {
     private float lastBoundRange() {
         float[] range = scale.range();
         return range[range.length - 1];
+    }
+
+    public void draw(Canvas canvas) {
+        drawLine(canvas);
+    }
+
+    private void drawLine(Canvas canvas) {
+        float startX, startY, endX, endY;
+        if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
+            startX = offsetX + firstBoundRange();
+            startY = offsetY;
+            endX = offsetX + lastBoundRange();
+            endY = offsetY;
+        } else {
+            startX = offsetX;
+            startY = offsetY + firstBoundRange();
+            endX = offsetX;
+            endY = offsetY + lastBoundRange();
+        }
+
+        canvas.drawLine(startX, startY, endX, endY, paint);
     }
 }
