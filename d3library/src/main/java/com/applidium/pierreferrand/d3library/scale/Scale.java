@@ -4,6 +4,8 @@ public class Scale {
     private float[] domain;
     private float[] range;
 
+    private Interpolator interpolator;
+
     public Scale() {
         this(null, null);
     }
@@ -13,9 +15,14 @@ public class Scale {
     }
 
     public Scale(float[] domain, float[] range) {
+        this(domain, range, new LinearInterpolator());
+    }
+
+    public Scale(float[] domain, float[] range, Interpolator interpolator) {
         verifyParametersValidity(domain, range);
         this.domain(domain);
         this.range(range);
+        this.interpolator(interpolator);
     }
 
     private void verifyParametersValidity(float[] domain, float[] range) {
@@ -48,5 +55,34 @@ public class Scale {
             this.range = range.clone();
         }
         return this;
+    }
+
+    public Scale interpolator(Interpolator interpolator) {
+        if (interpolator == null) {
+            throw new IllegalStateException("Interpolator must not be null");
+        }
+        this.interpolator = interpolator;
+        return this;
+    }
+
+    public float value(float domainValue) {
+        if (domain == null) {
+            throw new IllegalStateException("Domain should not be null");
+        }
+        if (range == null) {
+            return domainValue;
+        }
+        return interpolator.interpolate(domainValue, domain, range);
+    }
+
+    public float invert(float rangeValue) {
+        if (domain == null || range == null) {
+            throw new IllegalStateException("Domain and range should not be null");
+        }
+        return interpolator.interpolate(rangeValue, range, domain);
+    }
+
+    public Scale copy() {
+        return new Scale(domain, range, interpolator);
     }
 }
