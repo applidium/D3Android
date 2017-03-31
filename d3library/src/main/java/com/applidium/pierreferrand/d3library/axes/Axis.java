@@ -7,7 +7,7 @@ import android.graphics.Rect;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 
-import com.applidium.pierreferrand.d3library.scale.Scale;
+import com.applidium.pierreferrand.d3library.scale.D3Scale;
 
 public class Axis {
 
@@ -23,7 +23,7 @@ public class Axis {
     private int ticksNumber = DEFAULT_TICK_NUMBER;
 
     private final AxisOrientation orientation;
-    private Scale scale;
+    private D3Scale scale;
 
     private float[] ticks;
 
@@ -32,7 +32,7 @@ public class Axis {
 
     private LegendProperties legendProperties;
 
-    public Axis(AxisOrientation orientation, Scale scale) {
+    public Axis(AxisOrientation orientation, D3Scale scale) {
         this.orientation = orientation;
         this.scale = scale;
         this.legendProperties = new LegendProperties();
@@ -120,14 +120,14 @@ public class Axis {
     /***
      * @return the scale of the Axis
      */
-    public Scale scale() {
+    public D3Scale scale() {
         return this.scale;
     }
 
     /***
      * Set the scale of the Axis
      */
-    public Axis scale(Scale scale) {
+    public Axis scale(D3Scale scale) {
         this.scale = scale;
         return this;
     }

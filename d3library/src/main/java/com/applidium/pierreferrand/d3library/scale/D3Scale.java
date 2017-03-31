@@ -1,6 +1,6 @@
 package com.applidium.pierreferrand.d3library.scale;
 
-public class Scale {
+public class D3Scale {
     private final static int DEFAULT_TICK_NUMBER = 10;
 
     private float[] domain;
@@ -8,19 +8,19 @@ public class Scale {
 
     private Interpolator interpolator;
 
-    public Scale() {
+    public D3Scale() {
         this(null, null);
     }
 
-    public Scale(float[] domain) {
+    public D3Scale(float[] domain) {
         this(domain, null);
     }
 
-    public Scale(float[] domain, float[] range) {
+    public D3Scale(float[] domain, float[] range) {
         this(domain, range, new LinearInterpolator());
     }
 
-    public Scale(float[] domain, float[] range, Interpolator interpolator) {
+    public D3Scale(float[] domain, float[] range, Interpolator interpolator) {
         verifyParametersValidity(domain, range);
         this.domain(domain);
         this.range(range);
@@ -37,7 +37,7 @@ public class Scale {
         return domain.clone();
     }
 
-    public Scale domain(float[] domain) {
+    public D3Scale domain(float[] domain) {
         verifyParametersValidity(domain, range);
         if (domain != null && domain.length < 2) {
             throw new IllegalStateException("Domain must have at least 2 elements");
@@ -54,7 +54,7 @@ public class Scale {
         return range.clone();
     }
 
-    public Scale range(float[] range) {
+    public D3Scale range(float[] range) {
         verifyParametersValidity(domain, range);
         if (range != null && range.length < 2) {
             throw new IllegalStateException("Range must have at least 2 elements");
@@ -67,7 +67,7 @@ public class Scale {
         return this;
     }
 
-    public Scale interpolator(Interpolator interpolator) {
+    public D3Scale interpolator(Interpolator interpolator) {
         if (interpolator == null) {
             throw new IllegalStateException("Interpolator must not be null");
         }
@@ -92,8 +92,8 @@ public class Scale {
         return interpolator.interpolate(rangeValue, range, domain);
     }
 
-    public Scale copy() {
-        return new Scale(domain, range, interpolator);
+    public D3Scale copy() {
+        return new D3Scale(domain, range, interpolator);
     }
 
     public float[] ticks() {
