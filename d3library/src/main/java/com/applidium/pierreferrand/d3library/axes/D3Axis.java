@@ -7,9 +7,10 @@ import android.graphics.Rect;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 
+import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
 
-public class D3Axis {
+public class D3Axis extends D3Drawable {
 
     private static final float DEFAULT_TICK_SIZE = 25.0f;
     private static final float DEFAULT_STROKE_WIDTH = 5.0f;
@@ -308,7 +309,7 @@ public class D3Axis {
         return this;
     }
 
-    public void draw(Canvas canvas) {
+    @Override public void draw(Canvas canvas) {
         drawLine(canvas);
         drawTicks(canvas);
         drawTicksLegend(canvas);
