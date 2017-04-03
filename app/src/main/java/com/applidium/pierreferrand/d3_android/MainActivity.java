@@ -25,8 +25,8 @@ public class MainActivity extends Activity {
         line.y(new D3DataMapperFunction<Float>() {
             @Override public float compute(Float object, int position, Float[] data) {
                 D3Scale scale = new D3Scale()
-                    .domain(new float[]{0f, 1200f})
-                    .range(new float[]{line.height(), 0});
+                    .domain(new Float[]{0f, 1200f})
+                    .range(new Float[]{line.height(), 0f});
                 float test = scale.value(object);
                 Log.v("DebugValue", "" + object + " -> " + test);
                 return test;

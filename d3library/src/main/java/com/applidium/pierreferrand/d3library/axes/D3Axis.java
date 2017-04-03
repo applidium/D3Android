@@ -8,6 +8,7 @@ import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
+import com.applidium.pierreferrand.d3library.helper.ArrayConverterHelper;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
 
 public class D3Axis extends D3Drawable {
@@ -184,7 +185,7 @@ public class D3Axis extends D3Drawable {
     }
 
     private float lastBoundRange() {
-        float[] range = scale.range();
+        float[] range = ArrayConverterHelper.convertArray(scale.range());
         return range[range.length - 1];
     }
 
