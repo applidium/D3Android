@@ -3,12 +3,17 @@ package com.applidium.pierreferrand.d3_android;
 import android.app.Activity;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
-import android.util.Log;
+import android.support.v4.content.ContextCompat;
 
 import com.applidium.pierreferrand.d3library.D3View;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.Line.D3Line;
-import com.applidium.pierreferrand.d3library.scale.D3Scale;
+import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
+import com.applidium.pierreferrand.d3library.axes.D3Axis;
+import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
+import com.applidium.pierreferrand.d3library.axes.HorizontalAlignment;
+import com.applidium.pierreferrand.d3library.axes.VerticalAlignment;
+import com.applidium.pierreferrand.d3library.scale.D3Converter;
 
 public class MainActivity extends Activity {
 
@@ -18,22 +23,67 @@ public class MainActivity extends Activity {
 
         D3View view = (D3View) findViewById(R.id.test);
 
+        final D3Axis<Float> horizontalAxis = new D3Axis(AxisOrientation.TOP);
+        final D3Axis<Float> verticalAxis = new D3Axis(AxisOrientation.LEFT);
+
+        view.add(
+            horizontalAxis
+                .domain(new Float[]{0f, 100f})
+                .offsetX(0f)
+                .offsetY(new D3FloatFunction() {
+                    @Override public float getFloat() {
+                        return horizontalAxis.height() * 0.95f;
+                    }
+                })
+                .ticks(5)
+                .converter(new D3Converter<Float>() {
+                    @Override public float convert(Float toConvert) {
+                        return toConvert;
+                    }
+
+                    @Override public Float invert(float toInvert) {
+                        return toInvert;
+                    }
+                })
+                .legendHorizontalAlignment(HorizontalAlignment.CENTER)
+                .textSizeInPixels(40)
+                .axisColor(ContextCompat.getColor(this, R.color.colorPrimaryDark))
+                .legendColor(ContextCompat.getColor(this, R.color.colorAccent))
+        );
+
+        view.add(
+            verticalAxis
+                .domain(new Float[]{0f, 1200f})
+                .ticks(3)
+                .offsetY(0f)
+                .converter(new D3Converter<Float>() {
+                    @Override public float convert(Float toConvert) {
+                        return toConvert;
+                    }
+
+                    @Override public Float invert(float toInvert) {
+                        return toInvert;
+                    }
+                })
+                .offsetX(new D3FloatFunction() {
+                    @Override public float getFloat() {
+                        return verticalAxis.width() * 0.05f;
+                    }
+                })
+                .legendVerticalAlignment(VerticalAlignment.CENTER)
+                .textSizeInPixels(30f)
+        );
 
         final D3Line<Float> line = new D3Line<>(new Float[]{
-            750f, 300f, 350f, 100f, 1000f, 300f, 300f, 500f
+            750f, 300f, 350f, 100f, 1300f, 300f, 300f, 500f
         });
         line.y(new D3DataMapperFunction<Float>() {
             @Override public float compute(Float object, int position, Float[] data) {
-                D3Scale scale = new D3Scale()
-                    .domain(new Float[]{0f, 1200f})
-                    .range(new Float[]{line.height(), 0f});
-                float test = scale.value(object);
-                Log.v("DebugValue", "" + object + " -> " + test);
-                return test;
+                return verticalAxis.scale().value(object);
             }
         }).x(new D3DataMapperFunction<Float>() {
             @Override public float compute(Float object, int position, Float[] data) {
-                return position * line.width() / (line.data().length - 1);
+                return horizontalAxis.scale().value(100f * position / (data.length - 1));
             }
         });
 
