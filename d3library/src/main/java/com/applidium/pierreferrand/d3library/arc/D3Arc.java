@@ -9,8 +9,12 @@ import android.graphics.PorterDuffXfermode;
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
+import com.applidium.pierreferrand.d3library.helper.ColorHelper;
+import com.applidium.pierreferrand.d3library.helper.TextHelper;
 
 public class D3Arc<T> extends D3Drawable {
+    private static float DEFAULT_LABEL_TEXT_SIZE = 25f;
+
     private int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
 
     private D3FloatFunction outerRadius;
@@ -22,6 +26,8 @@ public class D3Arc<T> extends D3Drawable {
     private T[] data;
     private D3DataMapperFunction<T> values;
     private D3DataMapperFunction<T> weights;
+
+    private String[] labels;
 
     public D3Arc() {
         this(null);
@@ -171,6 +177,27 @@ public class D3Arc<T> extends D3Drawable {
         return this;
     }
 
+    public String[] labels() {
+        return labels();
+    }
+
+    public D3Arc<T> labels(boolean drawLabelsDependingOnData) {
+        if (drawLabelsDependingOnData) {
+            labels = new String[data.length];
+            for (int i = 0; i < data.length; i++) {
+                labels[i] = data[i].toString();
+            }
+        } else {
+            labels = null;
+        }
+        return this;
+    }
+
+    public D3Arc<T> labels(String[] labels) {
+        this.labels = labels.clone();
+        return this;
+    }
+
 
     @Override public void draw(Canvas canvas) {
         float[] weights = this.weights();
@@ -184,6 +211,7 @@ public class D3Arc<T> extends D3Drawable {
         }
 
         drawPie(canvas, weights, totalWeight);
+        drawLabels(canvas, weights, totalWeight);
     }
 
     private void drawPie(Canvas canvas, float[] weights, float totalWeight) {
@@ -215,5 +243,33 @@ public class D3Arc<T> extends D3Drawable {
         c.drawCircle(outerRadius, outerRadius, innerRadius(), paint);
 
         canvas.drawBitmap(bitmap, offsetX(), offsetY(), null);
+    }
+
+
+    private void drawLabels(Canvas canvas, float[] weights, float totalWeight) {
+        if (labels == null) {
+            return;
+        }
+
+        float currentAngle = 0f;
+        float radius = (outerRadius() + innerRadius()) / 2f;
+        float realOffsetX = offsetX() + outerRadius();
+        float realOffsetY = offsetY() + outerRadius();
+
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setTextSize(DEFAULT_LABEL_TEXT_SIZE);
+        paint.setStyle(Paint.Style.FILL);
+
+        for (int i = 0; i < data.length; i++) {
+            paint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
+            float nextAngle = currentAngle + 360.0f * weights[i] / totalWeight;
+            float radianAngle = (nextAngle + currentAngle) / 360f * (float) Math.PI;
+            float coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
+            coordinateX -= paint.measureText(labels[i]) / 2f;
+            float coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
+            coordinateY += TextHelper.getTextHeight(labels[i], paint) / 2f;
+            canvas.drawText(labels[i], coordinateX, coordinateY, paint);
+            currentAngle = nextAngle;
+        }
     }
 }
