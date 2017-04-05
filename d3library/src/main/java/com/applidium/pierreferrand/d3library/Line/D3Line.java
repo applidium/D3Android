@@ -12,12 +12,12 @@ public class D3Line<T> extends D3Drawable {
 
     private static final float DEFAULT_STROKE_WIDTH = 5.0f;
 
-    private T[] data;
+    protected T[] data;
     private D3DataMapperFunction<T> x;
     private D3DataMapperFunction<T> y;
 
-    private Paint paint;
-    private Interpolator interpolator;
+    protected Paint paint;
+    protected Interpolator interpolator;
 
     public D3Line() {
         this(null);
