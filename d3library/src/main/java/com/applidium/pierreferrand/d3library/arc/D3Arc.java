@@ -198,6 +198,42 @@ public class D3Arc<T> extends D3Drawable {
         return this;
     }
 
+    public Object dataFromPosition(float x, float y) {
+        float xCenter = offsetX() + outerRadius();
+        float yCenter = offsetY() + outerRadius();
+
+        float diffX = (x - xCenter);
+        float diffY = (y - yCenter);
+
+        float radius2 = diffX * diffX + diffY * diffY;
+        if (radius2 < innerRadius() * innerRadius() || radius2 > outerRadius() * outerRadius()) {
+            return null;
+        }
+
+        float angle = (float) Math.atan(diffY / diffX);
+        angle += angle < 0f ? Math.PI : 0f;
+        angle += diffY < 0f ? Math.PI : 0f;
+        angle = (float) (angle * 180f / Math.PI);
+        angle = 360f - angle;
+
+        float[] weights = this.weights();
+        float totalWeight = 0f;
+
+        for (int i = 0; i < data.length; i++) {
+            totalWeight += weights[i];
+        }
+        if (totalWeight == 0f) {
+            return null;
+        }
+
+        float currentAngle = 0f;
+        int indexData = -1;
+        while (currentAngle < angle) {
+            indexData++;
+            currentAngle += 360f * weights[indexData] / totalWeight;
+        }
+        return data[indexData];
+    }
 
     @Override public void draw(Canvas canvas) {
         float[] weights = this.weights();
