@@ -4,11 +4,14 @@ import android.graphics.Canvas;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 public abstract class D3Drawable {
     private float height;
     private float width;
 
     @Nullable private OnClickAction onClickAction;
+    @Nullable private OnScrollAction onScrollAction;
 
     abstract public void draw(Canvas canvas);
 
@@ -33,6 +36,17 @@ public abstract class D3Drawable {
     public void onClick(float X, float Y) {
         if (onClickAction != null) {
             onClickAction.onClick(X, Y);
+        }
+    }
+
+    public D3Drawable onScrollAction(OnScrollAction onScrollAction) {
+        this.onScrollAction = onScrollAction;
+        return this;
+    }
+
+    public void onScroll(ScrollDirection direction, float dX, float dY) {
+        if (onScrollAction != null) {
+            onScrollAction.onScroll(direction, dX, dY);
         }
     }
 }
