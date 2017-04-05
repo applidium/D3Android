@@ -95,6 +95,11 @@ public class D3Line<T> extends D3Drawable {
         return yValue;
     }
 
+    public D3Line<T> paint(Paint paint) {
+        this.paint = paint;
+        return this;
+    }
+
     @Override public void draw(Canvas canvas) {
         if (data.length < 2) {
             return;
