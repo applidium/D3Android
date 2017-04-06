@@ -127,6 +127,10 @@ public class D3Scale<T> {
         return this;
     }
 
+    public D3Converter<T> converter() {
+        return converter;
+    }
+
     public D3Scale<T> copy() {
         return new D3Scale<>(domain(), range(), interpolator);
     }
