@@ -48,9 +48,11 @@ public abstract class D3Drawable {
         return this;
     }
 
-    public void onScroll(ScrollDirection direction, float dX, float dY) {
+    public void onScroll(
+        ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
+    ) {
         if (onScrollAction != null) {
-            onScrollAction.onScroll(direction, dX, dY);
+            onScrollAction.onScroll(direction, coordinateX, coordinateY, dX, dY);
         }
     }
 

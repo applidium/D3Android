@@ -82,7 +82,7 @@ public class D3Axis<T> extends D3Drawable {
     @NonNull private OnScrollAction getHorizontalOnScrollAction() {
         return new OnScrollAction() {
             @Override public void onScroll(
-                ScrollDirection direction, float dX, float dY
+                ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
             ) {
                 if (direction != ScrollDirection.TOP && direction != ScrollDirection.BOTTOM) {
                     return;
@@ -132,7 +132,7 @@ public class D3Axis<T> extends D3Drawable {
     @NonNull private OnScrollAction getVerticalOnScrollAction() {
         return new OnScrollAction() {
             @Override public void onScroll(
-                ScrollDirection direction, float dX, float dY
+                ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
             ) {
                 if (direction != ScrollDirection.RIGHT && direction != ScrollDirection.LEFT) {
                     return;

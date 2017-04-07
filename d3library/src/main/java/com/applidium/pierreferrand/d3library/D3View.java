@@ -155,15 +155,17 @@ public class D3View extends View {
 
     private void handleScrollMovement(MotionEvent event, int historySize) {
         ScrollDirection direction;
-        float diffX = event.getX() - event.getHistoricalX(historySize - 1);
-        float diffY = event.getY() - event.getHistoricalY(historySize - 1);
+        float previousX = event.getHistoricalX(historySize - 1);
+        float previousY = event.getHistoricalY(historySize - 1);
+        float diffX = event.getX() - previousX;
+        float diffY = event.getY() - previousY;
         if (Math.abs(diffX) > Math.abs(diffY)) {
             direction = diffX > 0f ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
         } else {
             direction = diffY > 0f ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
         }
         for (D3Drawable drawable : drawables) {
-            drawable.onScroll(direction, diffX, diffY);
+            drawable.onScroll(direction, previousX, previousY, diffX, diffY);
         }
         invalidate();
     }
