@@ -99,13 +99,23 @@ public class D3View extends View {
         float[] maxDifferenceAbsolute = new float[event.getPointerCount()];
         float[] differenceX = new float[event.getPointerCount()];
         float[] differenceY = new float[event.getPointerCount()];
+
+        int histLength = event.getHistorySize();
         computeDifferences(event, maxDifferenceAbsolute, differenceX, differenceY);
         int indexMovement = findFingerMovedIndex(maxDifferenceAbsolute);
         PinchType pinchType = computePinchType(
             event, differenceX[indexMovement], differenceY[indexMovement], indexMovement
         );
         for (D3Drawable drawable : drawables) {
-            drawable.onPinch(pinchType, differenceX[indexMovement], differenceY[indexMovement]);
+            drawable.onPinch(
+                pinchType,
+                event.getHistoricalX(1 - indexMovement, histLength - 1),
+                event.getHistoricalY(1 - indexMovement, histLength - 1),
+                event.getHistoricalX(indexMovement, histLength - 1),
+                event.getHistoricalY(indexMovement, histLength - 1),
+                differenceX[indexMovement],
+                differenceY[indexMovement]
+            );
         }
         invalidate();
     }

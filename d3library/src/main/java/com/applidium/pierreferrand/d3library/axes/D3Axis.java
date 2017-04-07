@@ -108,7 +108,8 @@ public class D3Axis<T> extends D3Drawable {
             private static final float DEFAULT_RATIO = 0.985f;
 
             @Override public void onPinch(
-                PinchType pinchType, float dX, float dY
+                PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
+                float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
                 if (pinchType != PinchType.VERTICAL_DECREASE && pinchType != PinchType
                     .VERTICAL_INCREASE) {
@@ -157,7 +158,8 @@ public class D3Axis<T> extends D3Drawable {
             private static final float DEFAULT_RATIO = 0.985f;
 
             @Override public void onPinch(
-                PinchType pinchType, float dX, float dY
+                PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
+                float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
                 if (pinchType != PinchType.HORIZONTAL_DECREASE && pinchType != PinchType
                     .HORIZONTAL_INCREASE) {

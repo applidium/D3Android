@@ -61,9 +61,15 @@ public abstract class D3Drawable {
         return this;
     }
 
-    public void onPinch(PinchType pinchType, float dX, float dY) {
+    public void onPinch(
+        PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
+        float coordinateMobileX, float coordinateMobileY, float dX, float dY
+    ) {
         if (onPinchAction != null) {
-            onPinchAction.onPinch(pinchType, dX, dY);
+            onPinchAction.onPinch(
+                pinchType, coordinateStaticX, coordinateStaticY, coordinateMobileX,
+                coordinateMobileY, dX, dY
+            );
         }
     }
 
