@@ -7,6 +7,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 
@@ -18,10 +19,12 @@ public class D3View extends View {
     private boolean clickTracker;
 
     public final List<D3Drawable> drawables;
+    public final List<Action> afterDrawActions;
 
     public D3View(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         drawables = new ArrayList<>();
+        afterDrawActions = new ArrayList<>();
     }
 
     public void add(D3Drawable drawable) {
@@ -33,6 +36,9 @@ public class D3View extends View {
         for (D3Drawable drawable : drawables) {
             drawable.setDimensions(getHeight(), getWidth());
             drawable.draw(canvas);
+        }
+        for (Action action : afterDrawActions) {
+            action.execute();
         }
     }
 
