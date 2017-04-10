@@ -50,8 +50,8 @@ public class D3Scale<T> {
         return this;
     }
 
-    public D3Scale<T> domain(D3RangeFunction function) {
-        domain = function;
+    public D3Scale<T> domain(D3RangeFunction<T> domain) {
+        this.domain = domain;
         return this;
     }
 
@@ -83,8 +83,8 @@ public class D3Scale<T> {
         return this;
     }
 
-    public D3Scale<T> range(D3RangeFunction function) {
-        range = function;
+    public D3Scale<T> range(D3RangeFunction<Float> range) {
+        this.range = range;
         return this;
     }
 
@@ -150,12 +150,10 @@ public class D3Scale<T> {
             return ticks;
         }
 
-        for (int i = 1; i < count - 1; i++) {
+        for (int i = 0; i < count; i++) {
             ticks[i] = i * domain[domain.length - 1] / (count - 1)
                 + (count - 1 - i) * domain[0] / (count - 1);
         }
-        ticks[0] = domain[0];
-        ticks[count - 1] = domain[domain.length - 1];
 
         return ticks;
     }
