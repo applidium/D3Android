@@ -85,9 +85,6 @@ public class D3Axis<T> extends D3Drawable {
             @Override public void onScroll(
                 ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
             ) {
-                if (direction != ScrollDirection.TOP && direction != ScrollDirection.BOTTOM) {
-                    return;
-                }
                 T[] domain = scale.domain();
                 Float[] range = scale.range();
                 float sign = dY < 0f ? 1f : -1f;
@@ -164,9 +161,6 @@ public class D3Axis<T> extends D3Drawable {
             @Override public void onScroll(
                 ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
             ) {
-                if (direction != ScrollDirection.RIGHT && direction != ScrollDirection.LEFT) {
-                    return;
-                }
                 D3Converter<T> converter = scale.converter();
                 T[] domain = scale.domain();
                 Float[] range = scale.range();
