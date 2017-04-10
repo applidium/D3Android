@@ -87,12 +87,11 @@ public class D3Line<T> extends D3Drawable {
         while (index < y.length - 2 && x[index + 1] < measuredX) {
             index++;
         }
-        float yValue = interpolator.interpolate(
+        return interpolator.interpolate(
             measuredX,
             new float[]{x[index], x[index + 1]},
             new float[]{y[index], y[index + 1]}
         );
-        return yValue;
     }
 
     public D3Line<T> paint(Paint paint) {
@@ -104,20 +103,12 @@ public class D3Line<T> extends D3Drawable {
         if (data.length < 2) {
             return;
         }
-        float prevX;
-        float prevY;
 
-        float nextX = x.compute(data[0], 0, data);
-        float nextY = y.compute(data[0], 0, data);
+        float[] x = x();
+        float[] y = y();
 
         for (int i = 1; i < data.length; i++) {
-            prevX = nextX;
-            prevY = nextY;
-
-            nextX = x.compute(data[i], i, data);
-            nextY = y.compute(data[i], i, data);
-
-            canvas.drawLine(prevX, prevY, nextX, nextY, paint);
+            canvas.drawLine(x[i - 1], y[i - 1], x[i], y[i], paint);
         }
     }
 }
