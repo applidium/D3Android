@@ -87,7 +87,7 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     public T[] data() {
-        return data;
+        return data.clone();
     }
 
     public D3Arc<T> data(T[] data) {
@@ -205,8 +205,8 @@ public class D3Arc<T> extends D3Drawable {
         float diffX = (x - xCenter);
         float diffY = (y - yCenter);
 
-        float radius2 = diffX * diffX + diffY * diffY;
-        if (radius2 < innerRadius() * innerRadius() || radius2 > outerRadius() * outerRadius()) {
+        float radius = (float) Math.hypot(diffX, diffY);
+        if (radius < innerRadius() || radius > outerRadius()) {
             return null;
         }
 
@@ -236,7 +236,7 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     @Override public void draw(Canvas canvas) {
-        float[] weights = this.weights();
+        float[] weights = weights();
         float totalWeight = 0f;
 
         for (int i = 0; i < data.length; i++) {
@@ -263,17 +263,18 @@ public class D3Arc<T> extends D3Drawable {
         Canvas c = new Canvas(bitmap);
         for (int i = 0; i < data.length; i++) {
             paint.setColor(colors[i % colors.length]);
+            float drawAngle = 360f * weights[i] / totalWeight;
             c.drawArc(
                 0f,
                 0f,
                 2f * outerRadius,
                 2f * outerRadius,
-                0f,
-                360f - currentAngle,
+                currentAngle,
+                -drawAngle,
                 true,
                 paint
             );
-            currentAngle += 360.0f * weights[i] / totalWeight;
+            currentAngle -= drawAngle;
         }
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         c.drawCircle(outerRadius, outerRadius, innerRadius(), paint);
@@ -299,7 +300,7 @@ public class D3Arc<T> extends D3Drawable {
         for (int i = 0; i < data.length; i++) {
             paint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
             float nextAngle = currentAngle + 360.0f * weights[i] / totalWeight;
-            float radianAngle = (nextAngle + currentAngle) / 360f * (float) Math.PI;
+            float radianAngle = (float) Math.toRadians((nextAngle + currentAngle) / 2f);
             float coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
             coordinateX -= paint.measureText(labels[i]) / 2f;
             float coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
