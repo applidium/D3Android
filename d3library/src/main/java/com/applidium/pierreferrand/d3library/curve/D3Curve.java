@@ -19,35 +19,38 @@ public class D3Curve<T> extends D3Line<T> {
 
     private void initInterpolator() {
         interpolator = new Interpolator() {
+            private int[] indexToUse;
+
             @Override
             public float interpolate(
                 float x,
                 float[] xData,
                 float[] yData
             ) {
-                int[] indexToUse = chooseIndexes(yData);
+                if (indexToUse == null || indexToUse.length != yData.length) {
+                    initIndex(yData.length);
+                }
+
                 return computeResult(x, xData, yData, indexToUse);
             }
-        };
-    }
 
-    private int[] chooseIndexes(float[] yData) {
-        int[] indexToUse;
-        if (yData.length <= 5) {
-            indexToUse = new int[yData.length];
-            for (int i = 0; i < indexToUse.length; i++) {
-                indexToUse[i] = i;
+            private void initIndex(int indexSize) {
+                if (indexSize <= 5) {
+                    indexToUse = new int[indexSize];
+                    for (int i = 0; i < indexToUse.length; i++) {
+                        indexToUse[i] = i;
+                    }
+                } else {
+                    indexToUse = new int[]{
+                        0,
+                        (indexSize - 1) / 4,
+                        (indexSize - 1) * 2 / 4,
+                        (indexSize - 1) * 3 / 4,
+                        (indexSize - 1)
+                    };
+                }
             }
-        } else {
-            indexToUse = new int[]{
-                0,
-                (yData.length - 1) / 4,
-                (yData.length - 1) * 2 / 4,
-                (yData.length - 1) * 3 / 4,
-                (yData.length - 1)
-            };
-        }
-        return indexToUse;
+        };
     }
 
     private float computeResult(
@@ -131,21 +134,8 @@ public class D3Curve<T> extends D3Line<T> {
         xDraw[pointsNumber - 1] = xData[yData.length - 1];
         yDraw[pointsNumber - 1] = interpolator.interpolate(xDraw[pointsNumber - 1], xData, yData);
 
-
-        float prevX;
-        float prevY;
-
-        float nextX = xDraw[0];
-        float nextY = yDraw[0];
-
         for (int i = 1; i < yDraw.length; i++) {
-            prevX = nextX;
-            prevY = nextY;
-
-            nextX = xDraw[i];
-            nextY = yDraw[i];
-
-            canvas.drawLine(prevX, prevY, nextX, nextY, paint);
+            canvas.drawLine(xDraw[i - 1], yDraw[i - 1], xDraw[i], yDraw[i], paint);
         }
     }
 }
