@@ -25,6 +25,7 @@ public class D3Axis<T> extends D3Drawable {
     private static final int DEFAULT_TICK_NUMBER = 5;
     private static final float BEGINNING_PROPORTION = 0.05f;
     private static final float END_PROPORTION = 0.95f;
+    private static final float PINCH_MIN_SPACING = 100f;
 
     private D3FloatFunction offsetX;
     private D3FloatFunction offsetY;
@@ -105,29 +106,57 @@ public class D3Axis<T> extends D3Drawable {
 
     @NonNull private OnPinchAction getHorizontalOnPinchAction() {
         return new OnPinchAction() {
-            private static final float DEFAULT_RATIO = 0.985f;
-
             @Override public void onPinch(
                 PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
                 float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
-                if (pinchType != PinchType.VERTICAL_DECREASE && pinchType != PinchType
-                    .VERTICAL_INCREASE) {
-                    return;
-                }
-                float prop = DEFAULT_RATIO;
-                prop = pinchType == PinchType.VERTICAL_INCREASE ? prop : 1f / prop;
-                T[] domain = scale.domain();
-                D3Converter<T> converter = scale.converter();
-                float middle = (converter.convert(domain[1]) + converter.convert(domain[0]))
-                    / 2f;
-                domain[0] = converter.invert(middle - (converter.convert(domain[1])
-                    - middle) * prop);
-                domain[1] = converter.invert(middle + (middle
-                    - converter.convert(domain[0])) * prop);
-                scale.domain(domain);
+                resizeOnPinch(coordinateStaticY, coordinateMobileY, dY);
             }
         };
+    }
+
+    private void resizeOnPinch(
+        float coordinateStatic, float coordinateMobile, float diffCoordinate
+    ) {
+        if (Math.abs(coordinateMobile - coordinateStatic) < PINCH_MIN_SPACING) {
+            return;
+        }
+
+        Float[] range = range();
+
+        float coordinateMin = range[0];
+        float coordinateMax = range[1];
+
+        int inverted = 0;
+        if (coordinateMin > coordinateMax) {
+            inverted = 1;
+            float tmp = coordinateMin;
+            coordinateMin = coordinateMax;
+            coordinateMax = tmp;
+        }
+
+        if ((coordinateMobile < coordinateMin || coordinateMobile > coordinateMax)
+            || (coordinateStatic < coordinateMin || coordinateStatic > coordinateMax)) {
+            return;
+        }
+        float propMobile = (coordinateMobile + diffCoordinate - coordinateMin)
+            / (coordinateMax - coordinateMin);
+        float propStatic = (coordinateStatic - coordinateMin) / (coordinateMax - coordinateMin);
+
+        D3Converter<T> converter = scale.converter();
+
+        float valueStatic = converter.convert(scale.invert(coordinateStatic));
+        float valueMobile = converter.convert(scale.invert(coordinateMobile - diffCoordinate));
+
+        float newDomainMin = (valueMobile * propStatic - valueStatic * propMobile)
+            / (propStatic - propMobile);
+        float newDomainMax = (newDomainMin * (propMobile - 1) + valueMobile) /
+            propMobile;
+
+        T[] domain = domain();
+        domain[inverted] = converter.invert(newDomainMin);
+        domain[1 - inverted] = converter.invert(newDomainMax);
+        domain(domain);
     }
 
     @NonNull private OnScrollAction getVerticalOnScrollAction() {
@@ -155,30 +184,11 @@ public class D3Axis<T> extends D3Drawable {
 
     @NonNull private OnPinchAction getVerticalOnPinchAction() {
         return new OnPinchAction() {
-            private static final float DEFAULT_RATIO = 0.985f;
-
             @Override public void onPinch(
                 PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
                 float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
-                if (pinchType != PinchType.HORIZONTAL_DECREASE && pinchType != PinchType
-                    .HORIZONTAL_INCREASE) {
-                    return;
-                }
-                D3Converter<T> converter = scale.converter();
-                float prop = DEFAULT_RATIO;
-                prop = pinchType == PinchType.HORIZONTAL_INCREASE ? prop : 1f / prop;
-                T[] domain = scale.domain();
-
-                float middle = (converter.convert(domain[1]) + converter.convert(domain[0]))
-                    / 2f;
-                domain[0] = converter.invert(
-                    middle - (converter.convert(domain[1]) - middle) * prop
-                );
-                domain[1] = converter.invert(
-                    middle + (middle - converter.convert(domain[0])) * prop
-                );
-                scale.domain(domain);
+                resizeOnPinch(coordinateStaticX, coordinateMobileX, dX);
             }
         };
     }
