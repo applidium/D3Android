@@ -6,22 +6,27 @@ import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3View;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.action.PinchType;
+import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
 import com.applidium.pierreferrand.d3library.axes.D3Axis;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
-import com.applidium.pierreferrand.d3library.barchart.D3BarChart;
+import com.applidium.pierreferrand.d3library.barchart.D3StackBarChart;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
-import org.joda.time.DateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
     D3View view;
 
-    D3Axis<Float> lightAxis;
+    D3Axis<Integer> numberAxis;
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -31,109 +36,163 @@ public class MainActivity extends Activity {
 
         view = (D3View) findViewById(R.id.test);
 
-        lightAxis =
-            new D3Axis<Float>(AxisOrientation.RIGHT)
+        numberAxis =
+            new D3Axis<Integer>(AxisOrientation.RIGHT)
                 .offsetX(new D3FloatFunction() {
                     @Override public float getFloat() {
                         return view.getWidth() * 0.05f;
                     }
                 })
-                .converter(new D3Converter<Float>() {
-                    @Override public float convert(Float toConvert) {
+                .converter(new D3Converter<Integer>() {
+                    @Override public float convert(Integer toConvert) {
                         return toConvert;
                     }
 
-                    @Override public Float invert(float toInvert) {
-                        return toInvert;
+                    @Override public Integer invert(float toInvert) {
+                        return (int) toInvert;
                     }
                 })
-                .domain(new Float[]{0f, 730f})
+                .domain(new Integer[]{0, 8000})
                 .range(new D3RangeFunction<Float>() {
                     @Override public Float[] getRange() {
                         return new Float[]{view.getHeight() * 0.8f, view.getHeight() * 0.1f};
                     }
                 });
 
-        final D3Axis<DateTime> timeAxis =
-            new D3Axis<DateTime>(AxisOrientation.TOP)
-                .domain(new DateTime[]{
-                    new DateTime().withHourOfDay(11).withMinuteOfHour(17).withSecondOfMinute(1),
-                    new DateTime().withHourOfDay(11).withMinuteOfHour(17).withSecondOfMinute(14),
+        final D3Axis<Integer> saleAxis =
+            new D3Axis<Integer>(AxisOrientation.TOP)
+                .domain(new Integer[]{0, 5})
+                .ticks(6)
+                .range(new D3RangeFunction<Float>() {
+                    @Override public Float[] getRange() {
+                        return new Float[]{0.05f * view.getWidth(), 0.95f * view.getWidth()};
                     }
-                ).range(new D3RangeFunction<Float>() {
-                @Override public Float[] getRange() {
-                    return new Float[]{0.05f * view.getWidth(), 0.95f * view.getWidth()};
-                }
-            }).converter(new D3Converter<DateTime>() {
-                @Override public float convert(DateTime toConvert) {
-                    return (float) (toConvert.getMillis() - 1491470254080L);
+                }).converter(new D3Converter<Integer>() {
+                @Override public float convert(Integer toConvert) {
+                    return toConvert;
                 }
 
-                @Override public DateTime invert(float toInvert) {
-
-                    return new DateTime().withMillis((long) toInvert + 1491470254080L);
+                @Override public Integer invert(float toInvert) {
+                    return (int) toInvert;
                 }
             }).offsetY(new D3FloatFunction() {
                 @Override public float getFloat() {
                     return (float) (view.getHeight() * 0.98);
                 }
-            });
+            })
+                .onScrollAction(new OnScrollAction() {
+                    @Override public void onScroll(
+                        ScrollDirection direction,
+                        float coordinateX,
+                        float coordinateY,
+                        float dX,
+                        float dY
+                    ) {
+                    }
+                })
+                .onPinchAction(new OnPinchAction() {
+                    @Override public void onPinch(
+                        PinchType pinchType,
+                        float coordinateStaticX,
+                        float coordinateStaticY,
+                        float coordinateMobileX,
+                        float coordinateMobileY,
+                        float dX,
+                        float dY
+                    ) {
+                    }
+                });
 
-        LightData[] lightData = new LightData[]{
-            new LightData(1, 70f),
-            new LightData(2, 510f),
-            new LightData(4, 434f),
-            new LightData(5, 431f),
-            new LightData(7, 428f),
-            new LightData(8, 457f),
-            new LightData(10, 210f),
-            new LightData(11, 100f),
-            new LightData(14, 100f)
+        Sales[] sales = new Sales[]{
+            new Sales(1, 3840, 1920, 960, 400),
+            new Sales(2, 1600, 1440, 960, 400),
+            new Sales(3, 640, 960, 940, 400),
+            new Sales(4, 320, 480, 640, 400)
         };
 
-
-        D3BarChart<LightData> lightBarChart =
-            new D3BarChart<>(lightData)
-                .dataHeight(new D3DataMapperFunction<LightData>() {
+        D3StackBarChart<Sales> stackBarChart =
+            new D3StackBarChart<>(sales, 4)
+                .x(new D3DataMapperFunction<Sales>() {
                     @Override public float compute(
-                        LightData object, int position, LightData[] data
+                        Sales object, int position, Sales[] data
                     ) {
-                        return lightAxis.scale().value(0f)
-                            - lightAxis.scale().value(object.value);
+                        return saleAxis.scale().value(object.sale);
                     }
-                }).dataWidth(new D3FloatFunction() {
-                @Override public float getFloat() {
-                    return 50f;
-                }
-            }).x(new D3DataMapperFunction<LightData>() {
-                D3Converter<DateTime> converter = timeAxis.scale().converter();
-
+                })
+                .y(new D3DataMapperFunction<Sales>() {
+                    @Override public float compute(
+                        Sales object, int position, Sales[] data
+                    ) {
+                        return numberAxis.scale().value(0);
+                    }
+                })
+                .dataWidth(100f)
+                .colors(new int[][]{
+                    new int[]{0xFF0000FF},
+                    new int[]{0xFF00FF00},
+                    new int[]{0xFF0000FF},
+                    new int[]{0xFFFF0000},
+                    });
+        List<D3DataMapperFunction<Sales>> heights = new ArrayList<>();
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
                 @Override public float compute(
-                    LightData object, int position, LightData[] data
+                    Sales object, int position, Sales[] data
                 ) {
-                    return timeAxis.scale().value(
-                        converter.invert(timeAxis.scale().ticks(data.length + 1)[position + 1])
-                    );
-                }
-            }).y(new D3DataMapperFunction<LightData>() {
-                @Override public float compute(
-                    LightData object, int position, LightData[] data
-                ) {
-                    return lightAxis.scale().value(0f);
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.apples);
                 }
             });
-
-        view.add(lightAxis);
-        view.add(lightBarChart);
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
+                @Override public float compute(
+                    Sales object, int position, Sales[] data
+                ) {
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.bananas);
+                }
+            });
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
+                @Override public float compute(
+                    Sales object, int position, Sales[] data
+                ) {
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.cherries);
+                }
+            });
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
+                @Override public float compute(
+                    Sales object, int position, Sales[] data
+                ) {
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.dates);
+                }
+            });
+        stackBarChart.dataHeight(heights);
+        view.add(numberAxis);
+        view.add(saleAxis);
+        view.add(stackBarChart);
     }
 
-    private class LightData {
-        DateTime date;
-        Float value;
+    class Sales {
+        int sale;
+        int apples;
+        int bananas;
+        int cherries;
+        int dates;
 
-        LightData(int sec, float value) {
-            date = new DateTime().withHourOfDay(11).withMinuteOfHour(17).withSecondOfMinute(sec);
-            this.value = value;
+        private Sales(int sale, int apples, int bananas, int cherries, int dates) {
+            this.sale = sale;
+            this.apples = apples;
+            this.bananas = bananas;
+            this.cherries = cherries;
+            this.dates = dates;
         }
     }
 }
