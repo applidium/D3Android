@@ -30,6 +30,15 @@ public class D3Scale<T> {
         this.domain(domain);
         this.range(range);
         this.interpolator(interpolator);
+        converter(new D3Converter<T>() {
+            @Override public float convert(T toConvert) {
+                return 0;
+            }
+
+            @Override public T invert(float toInvert) {
+                return null;
+            }
+        });
     }
 
     public T[] domain() {
