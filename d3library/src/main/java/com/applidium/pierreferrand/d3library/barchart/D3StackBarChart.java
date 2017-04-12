@@ -114,9 +114,9 @@ public class D3StackBarChart<T> extends D3Drawable {
         return this;
     }
 
-    public D3StackBarChart<T> dataHeight(D3DataMapperFunction<T>[] dataHeight) {
-        for (int i = 0; i < dataHeight.length; i++) {
-            barCharts.get(i).dataHeight(dataHeight[i]);
+    public D3StackBarChart<T> dataHeight(List<D3DataMapperFunction<T>> dataHeight) {
+        for (int i = 0; i < dataHeight.size(); i++) {
+            barCharts.get(i).dataHeight(dataHeight.get(i));
         }
         return this;
     }
