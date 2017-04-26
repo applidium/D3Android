@@ -73,5 +73,8 @@ public abstract class D3Drawable {
         }
     }
 
-
+    public void prepareParameters() {
+        /* Nothing to do. Child classes can override this method to launch computation
+         * of parameters before drawing. */
+    }
 }
