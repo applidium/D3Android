@@ -108,7 +108,7 @@ public class D3Curve<T> extends D3Line<T> {
         return this;
     }
 
-    @Override public Object[] data() {
+    @Override public T[] data() {
         return data.clone();
     }
 

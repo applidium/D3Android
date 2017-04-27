@@ -100,7 +100,7 @@ public class D3Line<T> extends D3Drawable {
         return this;
     }
 
-    public Object[] data() {
+    public T[] data() {
         return data.clone();
     }
 
