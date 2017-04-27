@@ -1,0 +1,119 @@
+package com.applidium.pierreferrand.d3library.polygon;
+
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Path;
+
+import com.applidium.pierreferrand.d3library.D3Drawable;
+import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+
+public class D3Polygon extends D3Drawable {
+
+    private static final float DEFAULT_STROKE_WIDTH = 5.0f;
+
+    private float[] x;
+    private float[] y;
+
+    private boolean proportional;
+    private Paint paint;
+
+    public D3Polygon() {
+        setupPaint();
+    }
+
+    private void setupPaint() {
+        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        paint.setColor(new Color().rgb(0, 0, 0));
+        paint.setStyle(Paint.Style.FILL);
+        paint.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+    }
+
+    public float[] x() {
+        return x.clone();
+    }
+
+    public D3Polygon x(float[] x) {
+        this.x = x;
+        return this;
+    }
+
+    public float[] y() {
+        return y.clone();
+    }
+
+    public D3Polygon y(float[] y) {
+        this.y = y;
+        return this;
+    }
+
+    public float[] coordinate() {
+        return mergeArrays(x, y);
+    }
+
+    private static float[] mergeArrays(float[] firstArray, float[] secondArray) {
+        float[] result = new float[firstArray.length * 2];
+        for (int i = 0; i < firstArray.length; i++) {
+            result[2 * i] = firstArray[i];
+            result[2 * i + 1] = secondArray[i];
+        }
+        return result;
+    }
+
+    public D3Polygon coordinate(float[] coordinate) {
+        x = new float[coordinate.length / 2];
+        y = new float[coordinate.length / 2];
+        separateArray(coordinate, x, y);
+        return this;
+    }
+
+    private static void separateArray(float[] merge, float[] firstArray, float[] secondArray) {
+        for (int i = 0; i < firstArray.length; i++) {
+            firstArray[i] = merge[2 * i];
+            secondArray[i] = merge[2 * i + 1];
+        }
+    }
+
+    public boolean proportional() {
+        return proportional;
+    }
+
+    public D3Polygon proportional(boolean proportional) {
+        this.proportional = proportional;
+        return this;
+    }
+
+    @Override public D3Polygon onClickAction(OnClickAction onClickAction) {
+        super.onClickAction(onClickAction);
+        return this;
+    }
+
+    @Override public D3Polygon onScrollAction(OnScrollAction onScrollAction) {
+        super.onScrollAction(onScrollAction);
+        return this;
+    }
+
+    @Override public D3Polygon onPinchAction(OnPinchAction onPinchAction) {
+        super.onPinchAction(onPinchAction);
+        return this;
+    }
+
+    @Override public void draw(Canvas canvas) {
+        Path path = new Path();
+        path.setFillType(Path.FillType.WINDING);
+        if (proportional) {
+            path.moveTo(x[0] * width(), y[0] * height());
+            for (int i = 1; i < x.length; i++) {
+                path.lineTo(x[i] * width(), y[i] * height());
+            }
+        } else {
+            path.moveTo(x[0], y[0]);
+            for (int i = 1; i < x.length; i++) {
+                path.lineTo(x[i], y[i]);
+            }
+        }
+        canvas.drawPath(path, paint);
+    }
+}
