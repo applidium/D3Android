@@ -6,6 +6,9 @@ import android.support.annotation.NonNull;
 
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.Line.D3Line;
+import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
@@ -108,12 +111,28 @@ public class D3Curve<T> extends D3Line<T> {
         return this;
     }
 
-    @Override public T[] data() {
-        return data.clone();
-    }
-
     @Override public D3Curve<T> data(T[] data) {
         this.data = data.clone();
+        return this;
+    }
+
+    @Override public D3Curve<T> interpolator(Interpolator interpolator) {
+        super.interpolator(interpolator);
+        return this;
+    }
+
+    @Override public D3Curve<T> onClickAction(OnClickAction onClickAction) {
+        super.onClickAction(onClickAction);
+        return this;
+    }
+
+    @Override public D3Curve<T> onScrollAction(OnScrollAction onScrollAction) {
+        super.onScrollAction(onScrollAction);
+        return this;
+    }
+
+    @Override public D3Curve<T> onPinchAction(OnPinchAction onPinchAction) {
+        super.onPinchAction(onPinchAction);
         return this;
     }
 
