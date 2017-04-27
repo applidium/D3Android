@@ -3,14 +3,26 @@ package com.applidium.pierreferrand.d3library.Line;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.support.annotation.NonNull;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.scale.LinearInterpolator;
+import com.applidium.pierreferrand.d3library.threading.ThreadPool;
+import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.Callable;
+import java.util.concurrent.Executors;
 
 public class D3Line<T> extends D3Drawable {
 
     private static final float DEFAULT_STROKE_WIDTH = 5.0f;
+
+    private ValueStorage<float[]> storeX;
+    private ValueStorage<float[]> storeY;
 
     protected T[] data;
     private D3DataMapperFunction<T> x;
@@ -37,11 +49,38 @@ public class D3Line<T> extends D3Drawable {
     }
 
     public float[] x() {
-        float[] result = new float[data.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = x.compute(data[i], i, data);
+        if (storeX != null) {
+            return storeX.getValue();
         }
+        return compute(x);
+    }
+
+    private float[] compute(D3DataMapperFunction<T> mapper) {
+        final float[] result = new float[data.length];
+
+        List<Callable<Object>> tasks = new ArrayList<>();
+        for (int k = 0; k < ThreadPool.coresNumber; k++) {
+            buildTask(mapper, result, tasks, k);
+        }
+        ThreadPool.execute(tasks);
         return result;
+    }
+
+    private void buildTask(
+        final D3DataMapperFunction<T> mapper,
+        final float[] result,
+        List<Callable<Object>> tasks,
+        final int k
+    ) {
+        tasks.add(Executors.callable(
+            new Runnable() {
+                @Override public void run() {
+                    for (int i = k; i < result.length; i += ThreadPool.coresNumber) {
+                        result[i] = mapper.compute(data[i], i, data);
+                    }
+                }
+            }
+        ));
     }
 
     public D3Line<T> x(D3DataMapperFunction<T> function) {
@@ -50,11 +89,10 @@ public class D3Line<T> extends D3Drawable {
     }
 
     public float[] y() {
-        float[] result = new float[data.length];
-        for (int i = 0; i < result.length; i++) {
-            result[i] = y.compute(data[i], i, data);
+        if (storeY != null) {
+            return storeY.getValue();
         }
-        return result;
+        return compute(y);
     }
 
     public D3Line<T> y(D3DataMapperFunction<T> function) {
@@ -81,8 +119,8 @@ public class D3Line<T> extends D3Drawable {
     }
 
     public float interpolateValue(float measuredX) {
-        float[] x = this.x();
-        float[] y = this.y();
+        float[] x = storeX != null ? storeX.getValue() : x();
+        float[] y = storeY != null ? storeY.getValue() : y();
         int index = 0;
         while (index < y.length - 2 && x[index + 1] < measuredX) {
             index++;
@@ -104,11 +142,37 @@ public class D3Line<T> extends D3Drawable {
             return;
         }
 
-        float[] x = x();
-        float[] y = y();
+        float[] x = storeX.getValue();
+        float[] y = storeY.getValue();
 
         for (int i = 1; i < data.length; i++) {
             canvas.drawLine(x[i - 1], y[i - 1], x[i], y[i], paint);
         }
+    }
+
+    @Override public void prepareParameters() {
+        final Object keyX = new Object();
+        final Object keyY = new Object();
+        storeX = new ValueStorage<>(buildRunnable(keyX, x), keyX);
+        storeY = new ValueStorage<>(buildRunnable(keyY, y), keyY);
+    }
+
+    @NonNull private ValueRunnable<float[]> buildRunnable(
+        final Object key, final D3DataMapperFunction<T> mapper
+    ) {
+        return new ValueRunnable<float[]>() {
+            float[] value;
+
+            @Override public float[] getValue() {
+                return value;
+            }
+
+            @Override public void run() {
+                synchronized (key) {
+                    value = compute(mapper);
+                    key.notify();
+                }
+            }
+        };
     }
 }
