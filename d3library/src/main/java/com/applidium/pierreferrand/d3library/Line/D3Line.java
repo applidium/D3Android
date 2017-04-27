@@ -6,6 +6,9 @@ import android.graphics.Paint;
 import android.support.annotation.NonNull;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
+import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.scale.LinearInterpolator;
 import com.applidium.pierreferrand.d3library.threading.ThreadPool;
@@ -155,6 +158,21 @@ public class D3Line<T> extends D3Drawable {
         final Object keyY = new Object();
         storeX = new ValueStorage<>(buildRunnable(keyX, x), keyX);
         storeY = new ValueStorage<>(buildRunnable(keyY, y), keyY);
+    }
+
+    @Override public D3Line<T> onClickAction(OnClickAction onClickAction) {
+        super.onClickAction(onClickAction);
+        return this;
+    }
+
+    @Override public D3Line<T> onScrollAction(OnScrollAction onScrollAction) {
+        super.onScrollAction(onScrollAction);
+        return this;
+    }
+
+    @Override public D3Line<T> onPinchAction(OnPinchAction onPinchAction) {
+        super.onPinchAction(onPinchAction);
+        return this;
     }
 
     @NonNull private ValueRunnable<float[]> buildRunnable(
