@@ -2,10 +2,12 @@ package com.applidium.pierreferrand.d3library;
 
 import android.content.Context;
 import android.graphics.Canvas;
+import android.os.Handler;
+import android.os.Looper;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
-import android.view.View;
+import android.view.SurfaceView;
 
 import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.action.PinchType;
@@ -14,31 +16,74 @@ import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import java.util.ArrayList;
 import java.util.List;
 
-public class D3View extends View {
+public class D3View extends SurfaceView implements Runnable {
+    private Thread thread;
+    private boolean mustRun = true;
+
+    /***
+     * Allows to make post-run actions be executed by the main thread, so post-run actions
+     * can modify the UI.
+     */
+    private final Handler handler;
 
     private boolean clickTracker;
 
     public final List<D3Drawable> drawables;
     public final List<Action> afterDrawActions;
 
+
     public D3View(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         drawables = new ArrayList<>();
         afterDrawActions = new ArrayList<>();
+        handler = new Handler(Looper.getMainLooper());
+        launchDisplay();
+    }
+
+    private void launchDisplay() {
+        thread = new Thread(this);
+        thread.start();
     }
 
     public void add(D3Drawable drawable) {
         drawables.add(drawable);
     }
 
+    public void onResume() {
+        mustRun = true;
+        launchDisplay();
+    }
+
+    public void onPause() {
+        mustRun = false;
+    }
+
+    @Override public void run() {
+        while (mustRun) {
+            if (!getHolder().getSurface().isValid()) {
+                continue;
+            }
+            Canvas c = getHolder().lockCanvas();
+            if (c != null) {
+                draw(c);
+                getHolder().unlockCanvasAndPost(c);
+            }
+        }
+    }
+
     @Override public void draw(Canvas canvas) {
         super.draw(canvas);
+        canvas.drawRGB(255, 255, 255);
         for (D3Drawable drawable : drawables) {
             drawable.setDimensions(getHeight(), getWidth());
             drawable.draw(canvas);
         }
-        for (Action action : afterDrawActions) {
-            action.execute();
+        for (final Action action : afterDrawActions) {
+            handler.post(new Runnable() {
+                @Override public void run() {
+                    action.execute();
+                }
+            });
         }
     }
 
@@ -83,7 +128,6 @@ public class D3View extends View {
             for (D3Drawable drawable : drawables) {
                 drawable.onClick(event.getX(), event.getY());
             }
-            invalidate();
         }
     }
 
@@ -117,7 +161,6 @@ public class D3View extends View {
                 differenceY[indexMovement]
             );
         }
-        invalidate();
     }
 
     private void computeDifferences(
@@ -177,6 +220,5 @@ public class D3View extends View {
         for (D3Drawable drawable : drawables) {
             drawable.onScroll(direction, previousX, previousY, diffX, diffY);
         }
-        invalidate();
     }
 }

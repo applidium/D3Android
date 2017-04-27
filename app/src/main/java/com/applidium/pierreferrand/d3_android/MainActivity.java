@@ -236,4 +236,14 @@ public class MainActivity extends Activity {
             this.value = value;
         }
     }
+
+    @Override protected void onPause() {
+        super.onPause();
+        view.onPause();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        view.onResume();
+    }
 }
