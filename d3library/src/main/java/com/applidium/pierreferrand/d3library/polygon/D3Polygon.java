@@ -10,6 +10,8 @@ import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 
+import java.util.Arrays;
+
 public class D3Polygon extends D3Drawable {
 
     private static final float DEFAULT_STROKE_WIDTH = 5.0f;
@@ -98,6 +100,76 @@ public class D3Polygon extends D3Drawable {
     @Override public D3Polygon onPinchAction(OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
+    }
+
+    public static float[] polygonHull(float[] coordinate) {
+        float[] x = new float[coordinate.length / 2];
+        float[] y = new float[coordinate.length / 2];
+        separateArray(coordinate, x, y);
+        return polygonHull(x, y);
+    }
+
+    public static float[] polygonHull(float[] x, float[] y) {
+        int n = x.length;
+        int pointer = 0;
+        float[] hullX = new float[2 * n];
+        float[] hullY = new float[2 * n];
+
+        sortPoints(x, y);
+        for (int i = 0; i < n; ++i) {
+            while (pointer >= 2 && cross(
+                hullX[pointer - 2], hullY[pointer - 2],
+                hullX[pointer - 1], hullY[pointer - 1],
+                x[i], y[i]
+            )) {
+                pointer--;
+            }
+            hullX[pointer] = x[i];
+            hullY[pointer++] = y[i];
+        }
+
+        for (int i = n - 2, t = pointer + 1; i >= 0; i--) {
+            while (pointer >= t && cross(
+                hullX[pointer - 2], hullY[pointer - 2],
+                hullX[pointer - 1], hullY[pointer - 1],
+                x[i], y[i]
+            )) {
+                pointer--;
+            }
+            hullX[pointer] = x[i];
+            hullY[pointer++] = y[i];
+        }
+
+        return mergeArrays(
+            Arrays.copyOfRange(hullX, 0, pointer - 1), Arrays.copyOfRange(hullY, 0, pointer - 1)
+        );
+    }
+
+    private static boolean cross(
+        float x1, float y1,
+        float x2, float y2,
+        float x3, float y3
+    ) {
+        return (x2 - x1) * (y2 - y3) + (y2 - y1) * (x3 - x2) >= 0;
+    }
+
+    private static void sortPoints(float[] x, float[] y) {
+        int pointer = 0;
+        float tmp;
+        while (pointer < x.length - 1) {
+            if (x[pointer] > x[pointer + 1]
+                || (x[pointer] == x[pointer + 1] && y[pointer] < y[pointer + 1])) {
+                tmp = x[pointer];
+                x[pointer] = x[pointer + 1];
+                x[pointer + 1] = tmp;
+                tmp = y[pointer];
+                y[pointer] = y[pointer + 1];
+                y[pointer + 1] = tmp;
+                pointer = Math.max(pointer - 1, 0);
+            } else {
+                pointer++;
+            }
+        }
     }
 
     @Override public void draw(Canvas canvas) {
