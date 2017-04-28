@@ -18,31 +18,31 @@ import com.applidium.pierreferrand.d3library.scale.D3Converter;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
 
 public class D3Axis<T> extends D3Drawable {
-
-    private static final float DEFAULT_TICK_SIZE = 25.0f;
-    private static final float DEFAULT_STROKE_WIDTH = 5.0f;
-    private static final float DEFAULT_OFFSET = 0.0f;
+    private static final float DEFAULT_TICK_SIZE = 25F;
+    private static final float DEFAULT_OFFSET = 0F;
     private static final int DEFAULT_TICK_NUMBER = 5;
-    private static final float BEGINNING_PROPORTION = 0.05f;
-    private static final float END_PROPORTION = 0.95f;
-    private static final float PINCH_MIN_SPACING = 100f;
+    private static final float BEGINNING_PROPORTION = 0.05F;
+    private static final float END_PROPORTION = 0.95F;
+    private static final float PINCH_MIN_SPACING = 100F;
+    private static final String CONVERTER_ERROR = "Converter should not be null";
+    private static final String DOMAIN_ERROR = "Domain should not be null";
+    private static final String RANGE_ERROR = "Range should not be null";
+    private static final String SCALE_ERROR = "Scale should not be null";
 
-    private D3FloatFunction offsetX;
-    private D3FloatFunction offsetY;
+    @NonNull private D3FloatFunction offsetX;
+    @NonNull private D3FloatFunction offsetY;
     private float innerTickSize = DEFAULT_TICK_SIZE;
     private float outerTickSize = DEFAULT_TICK_SIZE;
     private int ticksNumber = DEFAULT_TICK_NUMBER;
 
-    private final AxisOrientation orientation;
-    private D3Scale<T> scale;
+    @NonNull private final AxisOrientation orientation;
+    @NonNull private D3Scale<T> scale;
 
-    private String[] ticks;
+    @Nullable private String[] ticks;
+    @NonNull private Paint textPaint;
+    @NonNull private LegendProperties legendProperties;
 
-    private Paint textPaint;
-
-    private LegendProperties legendProperties;
-
-    public D3Axis(AxisOrientation orientation) {
+    public D3Axis(@NonNull AxisOrientation orientation) {
         this.orientation = orientation;
         scale = new D3Scale<>();
         if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
@@ -61,11 +61,29 @@ public class D3Axis<T> extends D3Drawable {
         setupProperties();
     }
 
+    public D3Axis(@NonNull AxisOrientation orientation, @NonNull D3Scale<T> scale) {
+        this.orientation = orientation;
+        this.scale = scale;
+        setupProperties();
+    }
+
     private void setupProperties() {
         translate(DEFAULT_OFFSET, DEFAULT_OFFSET);
         this.legendProperties = new LegendProperties();
         setupPaint();
         setupDefaultActions();
+    }
+
+    @Override protected void setupPaint() {
+        super.setupPaint();
+        setupTextPaint();
+    }
+
+    private void setupTextPaint() {
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setStyle(Paint.Style.FILL);
+        textPaint.setColor(legendProperties.color());
+        textPaint.setTextSize(legendProperties.textSizeInPixels());
     }
 
     private void setupDefaultActions() {
@@ -83,14 +101,23 @@ public class D3Axis<T> extends D3Drawable {
             @Override public void onScroll(
                 ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
             ) {
-                T[] domain = scale.domain();
-                Float[] range = scale.range();
-                float sign = dY < 0f ? 1f : -1f;
-                dY = Math.abs(dY);
                 D3Converter<T> converter = scale.converter();
+                if (converter == null) {
+                    throw new IllegalStateException(CONVERTER_ERROR);
+                }
+                T[] domain = scale.domain();
+                if (domain == null) {
+                    throw new IllegalStateException(DOMAIN_ERROR);
+                }
                 converter.convert(domain[0]);
-                float offset = scale.converter().convert(domain[0])
-                    - converter.convert(scale.invert(range[0] + dY));
+                Float[] range = scale.range();
+                if (range == null) {
+                    throw new IllegalStateException(RANGE_ERROR);
+                }
+                float sign = dY < 0F ? 1F : -1F;
+                float absDy = Math.abs(dY);
+                float offset = converter.convert(domain[0])
+                    - converter.convert(scale.invert(range[0] + absDy));
                 offset *= sign * 2;
                 domain[0] = converter.invert(converter.convert(domain[0]) - offset);
                 domain[1] = converter.invert(converter.convert(domain[1]) - offset);
@@ -134,12 +161,14 @@ public class D3Axis<T> extends D3Drawable {
             || (coordinateStatic < coordinateMin || coordinateStatic > coordinateMax)) {
             return;
         }
+
+        D3Converter<T> converter = scale.converter();
+        if (converter == null) {
+            throw new IllegalStateException(CONVERTER_ERROR);
+        }
         float propMobile = (coordinateMobile + diffCoordinate - coordinateMin)
             / (coordinateMax - coordinateMin);
         float propStatic = (coordinateStatic - coordinateMin) / (coordinateMax - coordinateMin);
-
-        D3Converter<T> converter = scale.converter();
-
         float valueStatic = converter.convert(scale.invert(coordinateStatic));
         float valueMobile = converter.convert(scale.invert(coordinateMobile - diffCoordinate));
 
@@ -160,12 +189,21 @@ public class D3Axis<T> extends D3Drawable {
                 ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
             ) {
                 D3Converter<T> converter = scale.converter();
+                if (converter == null) {
+                    throw new IllegalStateException(CONVERTER_ERROR);
+                }
                 T[] domain = scale.domain();
+                if (domain == null) {
+                    throw new IllegalStateException(DOMAIN_ERROR);
+                }
                 Float[] range = scale.range();
-                float sign = dX < 0f ? 1f : -1f;
-                dX = Math.abs(dX);
+                if (range == null) {
+                    throw new IllegalStateException(RANGE_ERROR);
+                }
+                float sign = dX < 0F ? 1F : -1F;
+                float absoluteDx = Math.abs(dX);
                 float offset = converter.convert(domain[0])
-                    - converter.convert(scale.invert(range[0] + dX));
+                    - converter.convert(scale.invert(range[0] + absoluteDx));
                 offset *= sign * 2;
                 domain[0] = converter.invert(converter.convert(domain[0]) - offset);
                 domain[1] = converter.invert(converter.convert(domain[1]) - offset);
@@ -185,121 +223,105 @@ public class D3Axis<T> extends D3Drawable {
         };
     }
 
-    public D3Axis(AxisOrientation orientation, D3Scale scale) {
-        this.orientation = orientation;
-        this.scale = scale;
-        setupProperties();
-    }
-
-    @Override protected void setupPaint() {
-        super.setupPaint();
-        setupTextPaint();
-    }
-
-    private void setupTextPaint() {
-        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setStyle(Paint.Style.FILL);
-        textPaint.setColor(legendProperties.color());
-        textPaint.setTextSize(legendProperties.textSizeInPixels());
-    }
-
-    /***
-     * Set the color of the stroke for the Axis and the ticks of this axis
+    /**
+     * Returns the domain of the associated scale.
      */
-    public D3Axis<T> axisColor(@ColorInt int color) {
-        paint.setColor(color);
-        return this;
-    }
-
-    /***
-     * Set the width of the stroke for the Axis and the ticks
-     */
-    public D3Axis<T> axisWidth(float width) {
-        paint.setStrokeWidth(width);
-        return this;
-    }
-
-    public T[] domain() {
+    @Nullable public T[] domain() {
         return scale.domain();
     }
 
-    public D3Axis<T> domain(T[] domain) {
+    /**
+     * Sets the domain of the associated scale.
+     */
+    public D3Axis<T> domain(@NonNull T[] domain) {
         scale().domain(domain);
         return this;
     }
 
-    public D3Axis<T> domain(D3RangeFunction function) {
+    /**
+     * Sets the domain of the associated scale.
+     */
+    public D3Axis<T> domain(@NonNull D3RangeFunction<T> function) {
         scale.domain(function);
         return this;
     }
 
-    public Float[] range() {
+    /**
+     * Returns the range of the associated scale.
+     */
+    @Nullable Float[] range() {
         return scale.range();
     }
 
+    /**
+     * Sets the range of the associated scale.
+     */
     public D3Axis<T> range(Float[] range) {
         scale.range(range);
         return this;
     }
 
-    public D3Axis<T> range(D3RangeFunction function) {
+    /**
+     * Sets the range of the associated scale.
+     */
+    public D3Axis<T> range(@NonNull D3RangeFunction<Float> function) {
         scale.range(function);
         return this;
     }
 
-    /***
-     * Set the coordinates of the origin
+    /**
+     * Sets the coordinates of the origin.
      */
     public D3Axis<T> translate(final float offsetX, final float offsetY) {
         this.offsetX = new D3FloatFunction() {
-            @Override public float getFloat() {
+            @NonNull @Override public float getFloat() {
                 return offsetX;
             }
         };
         this.offsetY = new D3FloatFunction() {
-            @Override public float getFloat() {
+            @NonNull @Override public float getFloat() {
                 return offsetY;
             }
         };
         return this;
     }
 
-    /***
-     * @return the horizontal coordinate of the origin
+    /**
+     * Returns the horizontal coordinate of the origin.
      */
     public float offsetX() {
         return offsetX.getFloat();
     }
 
-    /***
-     * Set the horizontal coordinate of the origin
+    /**
+     * Sets the horizontal coordinate of the origin.
      */
     public D3Axis<T> offsetX(final float offsetX) {
         this.offsetX = new D3FloatFunction() {
-            @Override public float getFloat() {
+            @NonNull @Override public float getFloat() {
                 return offsetX;
             }
         };
         return this;
     }
 
-    /***
-     * Set the vertical coordinate of the origin
+    /**
+     * Sets the vertical coordinate of the origin.
      */
-    public D3Axis<T> offsetX(D3FloatFunction function) {
+    public D3Axis<T> offsetX(@NonNull D3FloatFunction function) {
         this.offsetX = function;
         return this;
     }
 
-    /***
-     * @return the vertical coordinate of the origin
+    /**
+     * Returns the vertical coordinate of the origin.
      */
     public float offsetY() {
         return offsetY.getFloat();
     }
 
-    /***
-     * Set the vertical coordinate of the origin
+    /**
+     * Sets the vertical coordinate of the origin.
      */
     public D3Axis<T> offsetY(final float offsetY) {
         this.offsetY = new D3FloatFunction() {
@@ -310,23 +332,23 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * Set the horizontal coordinate of the origin
+    /**
+     * Sets the horizontal coordinate of the origin.
      */
-    public D3Axis<T> offsetY(D3FloatFunction function) {
+    public D3Axis<T> offsetY(@NonNull D3FloatFunction function) {
         this.offsetY = function;
         return this;
     }
 
-    /***
-     * @return the number of ticks for the Axis
+    /**
+     * Returns the number of ticks for the Axis.
      */
     public int ticks() {
         return ticksNumber;
     }
 
-    /***
-     * Set the number of ticks for the Axis
+    /**
+     * Sets the number of ticks for the Axis.
      */
     public D3Axis<T> ticks(int ticksNumber) {
         ticks = null;
@@ -334,8 +356,8 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * Reset ticks : default Scale ticks will be used
+    /**
+     * Resets ticks : default Scale ticks will be used.
      */
     public D3Axis<T> tickValues() {
         ticks = null;
@@ -343,11 +365,11 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * Set the the ticks to use rather than default Scale ticks
+    /**
+     * Sets the the ticks to use rather than default Scale ticks.
      */
-    public D3Axis<T> tickValues(String[] ticks) {
-        if (ticks == null || ticks.length < 2) {
+    public D3Axis<T> tickValues(@NonNull String[] ticks) {
+        if (ticks.length < 2) {
             throw new IllegalStateException("TickValue must have at least 2 values");
         }
         ticksNumber = ticks.length;
@@ -355,35 +377,35 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * @return the scale of the Axis
+    /**
+     * Returns the scale of the Axis.
      */
     public D3Scale<T> scale() {
         return this.scale;
     }
 
-    /***
-     * Set the scale of the Axis
+    /**
+     * Sets the scale of the Axis.
      */
-    public D3Axis<T> scale(D3Scale scale) {
+    public D3Axis<T> scale(@NonNull D3Scale<T> scale) {
         this.scale = scale;
         return this;
     }
 
-    public D3Axis<T> converter(D3Converter<T> converter) {
+    public D3Axis<T> converter(@NonNull D3Converter<T> converter) {
         scale.converter(converter);
         return this;
     }
 
-    /***
-     * @return the inner ticks' size
+    /**
+     * Returns the inner ticks' size.
      */
     public float tickSize() {
         return tickSizeInner();
     }
 
-    /***
-     * Set the inner and outer ticks' size
+    /**
+     * Sets the inner and outer ticks' size.
      */
     public D3Axis<T> tickSize(float size) {
         tickSizeInner(size);
@@ -391,30 +413,30 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * @return the inner ticks' size
+    /**
+     * Returns the inner ticks' size.
      */
     public float tickSizeInner() {
         return innerTickSize;
     }
 
-    /***
-     * Set the inner ticks' size
+    /**
+     * Sets the inner ticks' size.
      */
     public D3Axis<T> tickSizeInner(float size) {
         innerTickSize = size;
         return this;
     }
 
-    /***
-     * @return the outer ticks' size
+    /**
+     * Returns the outer ticks' size.
      */
     public float tickSizeOuter() {
         return outerTickSize;
     }
 
-    /***
-     * Set the outer ticks' size
+    /**
+     * Sets the outer ticks' size.
      */
     public D3Axis<T> tickSizeOuter(float size) {
         outerTickSize = size;
@@ -422,6 +444,9 @@ public class D3Axis<T> extends D3Drawable {
     }
 
     private float firstBoundRange() {
+        if (scale.range() == null) {
+            throw new IllegalStateException(RANGE_ERROR);
+        }
         return scale.range()[0];
     }
 
@@ -430,15 +455,15 @@ public class D3Axis<T> extends D3Drawable {
         return range[range.length - 1];
     }
 
-    /***
-     * @return the legendProperties use for legends
+    /**
+     * Returns the legendProperties use for legends.
      */
     public LegendProperties legendProperties() {
         return legendProperties;
     }
 
-    /***
-     * Set the legendProperties to use. If null, use the default one.
+    /**
+     * Sets the legendProperties to use. If null, use the default one.
      */
     public D3Axis<T> legendProperties(@Nullable LegendProperties legendProperties) {
         if (legendProperties == null) {
@@ -450,15 +475,15 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * @return the legend's text size
+    /**
+     * Returns the legend's text size.
      */
     public float textSizeInPixels() {
         return legendProperties.textSizeInPixels();
     }
 
-    /***
-     * Set the legend's text size
+    /**
+     * Sets the legend's text size.
      */
     public D3Axis<T> textSizeInPixels(float textSizeInPixels) {
         legendProperties.textSizeInPixels(textSizeInPixels);
@@ -466,15 +491,15 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * @return the legend's color
+    /**
+     * Returns the legend's color.
      */
-    public @ColorInt int legendColor() {
+    @ColorInt public int legendColor() {
         return legendProperties.color();
     }
 
-    /***
-     * Set the legend's color
+    /**
+     * Sets the legend's color.
      */
     public D3Axis<T> legendColor(@ColorInt int color) {
         legendProperties.color(color);
@@ -482,68 +507,68 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    /***
-     * @return the legend's vertical alignment
+    /**
+     * Returns the legend's vertical alignment.
      */
     public VerticalAlignment legendVerticalAlignment() {
         return legendProperties.verticalAlignement();
     }
 
-    /***
-     * set the legend's vertical alignment for a vertical Axis
+    /**
+     * sets the legend's vertical alignment for a vertical Axis.
      */
-    public D3Axis<T> legendVerticalAlignment(VerticalAlignment verticalAlignment) {
+    public D3Axis<T> legendVerticalAlignment(@NonNull VerticalAlignment verticalAlignment) {
         legendProperties.verticalAlignement(verticalAlignment);
         return this;
     }
 
-    /***
-     * @return the legend's horizontal alignment
+    /**
+     * Returns the legend's horizontal alignment.
      */
     public HorizontalAlignment legendHorizontalAlignment() {
         return legendProperties.horizontalAlignement();
     }
 
-    /***
-     * set the legend's horizontal alignment for a horizontal Axis
+    /**
+     * Sets the legend's horizontal alignment for a horizontal Axis.
      */
-    public D3Axis<T> legendHorizontalAlignment(HorizontalAlignment horizontalAlignment) {
+    public D3Axis<T> legendHorizontalAlignment(@NonNull HorizontalAlignment horizontalAlignment) {
         legendProperties.horizontalAlignement(horizontalAlignment);
         return this;
     }
 
-    /***
-     * @return the legend's horizontal offset
+    /**
+     * Returns the legend's horizontal offset.
      */
     public float legendOffsetX() {
         return legendProperties.offsetX();
     }
 
-    /***
-     * set the legend's horizontal offset
+    /**
+     * Sets the legend's horizontal offset.
      */
     public D3Axis<T> legendOffsetX(float offsetX) {
         legendProperties.offsetX(offsetX);
         return this;
     }
 
-    /***
-     * @return the legend's vertical offset
+    /**
+     * Returns the legend's vertical offset.
      */
     public float legendOffsetY() {
         return legendProperties.offsetY();
     }
 
-    /***
-     * set the legend's vertical offset
+    /**
+     * Sets the legend's vertical offset.
      */
     public D3Axis<T> legendOffsetY(float offsetY) {
         legendProperties.offsetY(offsetY);
         return this;
     }
 
-    /***
-     * set the legend's offsets
+    /**
+     * Sets the legend's offsets.
      */
     public D3Axis<T> legendOffset(float offsetX, float offsetY) {
         legendProperties.offsetX(offsetX);
@@ -551,47 +576,50 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    @Override public D3Axis<T> onClickAction(OnClickAction onClickAction) {
+    @Override public D3Axis<T> onClickAction(@NonNull OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Axis<T> onScrollAction(OnScrollAction onScrollAction) {
+    @Override public D3Axis<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Axis<T> onPinchAction(OnPinchAction onPinchAction) {
+    @Override public D3Axis<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
 
-    @Override public void draw(Canvas canvas) {
+    @Override public void draw(@NonNull Canvas canvas) {
         drawLine(canvas);
         drawTicks(canvas);
         drawTicksLegend(canvas);
     }
 
-    private void drawLine(Canvas canvas) {
-        float startX, startY, endX, endY;
-        float offsetX = this.offsetX.getFloat();
-        float offsetY = this.offsetY.getFloat();
+    private void drawLine(@NonNull Canvas canvas) {
+        float startX;
+        float startY;
+        float endX;
+        float endY;
+        float computedOffsetX = this.offsetX.getFloat();
+        float computedOffsetY = this.offsetY.getFloat();
         if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
-            startX = offsetX + firstBoundRange();
-            startY = offsetY;
-            endX = offsetX + lastBoundRange();
-            endY = offsetY;
+            startX = computedOffsetX + firstBoundRange();
+            startY = computedOffsetY;
+            endX = computedOffsetX + lastBoundRange();
+            endY = computedOffsetY;
         } else {
-            startX = offsetX;
-            startY = offsetY + firstBoundRange();
-            endX = offsetX;
-            endY = offsetY + lastBoundRange();
+            startX = computedOffsetX;
+            startY = computedOffsetY + firstBoundRange();
+            endX = computedOffsetX;
+            endY = computedOffsetY + lastBoundRange();
         }
 
         canvas.drawLine(startX, startY, endX, endY, paint);
     }
 
-    private void drawTicks(Canvas canvas) {
+    private void drawTicks(@NonNull Canvas canvas) {
         if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
             drawVerticalTicks(canvas);
         } else {
@@ -599,31 +627,31 @@ public class D3Axis<T> extends D3Drawable {
         }
     }
 
-    private void drawHorizontalTicks(Canvas canvas) {
-        float offsetX = this.offsetX.getFloat();
-        float offsetY = this.offsetY.getFloat();
-        float outerX = offsetX - outerTickSize / 2;
-        float innerX = offsetX + innerTickSize / 2;
+    private void drawHorizontalTicks(@NonNull Canvas canvas) {
+        float computedOffsetX = this.offsetX.getFloat();
+        float computedOffsetY = this.offsetY.getFloat();
+        float outerX = computedOffsetX - outerTickSize / 2;
+        float innerX = computedOffsetX + innerTickSize / 2;
         for (int i = 0; i < ticksNumber; i++) {
-            float coordinateY = offsetY + lastBoundRange() * i / (ticksNumber - 1.0f)
-                + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+            float coordinateY = computedOffsetY + lastBoundRange() * i / (ticksNumber - 1F)
+                + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
             canvas.drawLine(outerX, coordinateY, innerX, coordinateY, paint);
         }
     }
 
-    private void drawVerticalTicks(Canvas canvas) {
-        float offsetX = this.offsetX.getFloat();
-        float offsetY = this.offsetY.getFloat();
-        float outerY = offsetY + outerTickSize / 2;
-        float innerY = offsetY - innerTickSize / 2;
+    private void drawVerticalTicks(@NonNull Canvas canvas) {
+        float computedOffsetX = this.offsetX.getFloat();
+        float computedOffsetY = this.offsetY.getFloat();
+        float outerY = computedOffsetY + outerTickSize / 2;
+        float innerY = computedOffsetY - innerTickSize / 2;
         for (int i = 0; i < ticksNumber; i++) {
-            float coordinateX = offsetX + lastBoundRange() * i / (ticksNumber - 1.0f)
-                + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+            float coordinateX = computedOffsetX + lastBoundRange() * i / (ticksNumber - 1F)
+                + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
             canvas.drawLine(coordinateX, innerY, coordinateX, outerY, paint);
         }
     }
 
-    private void drawTicksLegend(Canvas canvas) {
+    private void drawTicksLegend(@NonNull Canvas canvas) {
         if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
             drawHorizontalLegend(canvas);
         } else {
@@ -631,12 +659,12 @@ public class D3Axis<T> extends D3Drawable {
         }
     }
 
-    private void drawVerticalLegend(Canvas canvas) {
-        float offsetX = this.offsetX.getFloat();
+    private void drawVerticalLegend(@NonNull Canvas canvas) {
+        float computedOffsetX = this.offsetX.getFloat();
         String[] usableTicks = this.ticks == null ?
             scale.ticksLegend(this.ticksNumber) : this.ticks;
         float coordinateX = orientation == AxisOrientation.LEFT ?
-            offsetX - innerTickSize : offsetX + innerTickSize;
+            computedOffsetX - innerTickSize : computedOffsetX + innerTickSize;
         coordinateX += legendProperties.offsetX();
 
         for (int i = 0; i < usableTicks.length; i++) {
@@ -644,36 +672,37 @@ public class D3Axis<T> extends D3Drawable {
         }
     }
 
-    private void drawSingleVerticalLegend(Canvas canvas, String tick, float coordinateX, int i) {
-        float offsetY = this.offsetY.getFloat();
-        float coordinateY = offsetY + lastBoundRange() * i / (ticksNumber - 1.0f)
-            + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+    private void drawSingleVerticalLegend(
+        @NonNull Canvas canvas, @NonNull String tick, float coordinateX, int i
+    ) {
+        float computedOffsetY = this.offsetY.getFloat();
+        float coordinateY = computedOffsetY + lastBoundRange() * i / (ticksNumber - 1F)
+            + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
         coordinateY += legendProperties.offsetY();
         coordinateY += alignmentVerticalOffset(tick);
-        coordinateX -= orientation == AxisOrientation.LEFT ?
-            textPaint.measureText(tick) : 0;
-
-        canvas.drawText(tick, coordinateX, coordinateY, textPaint);
+        float realCoordinateX = coordinateX - (orientation == AxisOrientation.LEFT ?
+            textPaint.measureText("" + tick) : 0);
+        canvas.drawText(tick, realCoordinateX, coordinateY, textPaint);
     }
 
-    private float alignmentVerticalOffset(String legend) {
+    private float alignmentVerticalOffset(@NonNull String legend) {
         float height = TextHelper.getTextHeight(legend, textPaint);
         switch (legendProperties.verticalAlignement()) {
             case BOTTOM:
                 return height;
             case CENTER:
-                return height / 2.0f;
+                return height / 2F;
             default:
-                return 0.0f;
+                return 0F;
         }
     }
 
-    private void drawHorizontalLegend(Canvas canvas) {
-        float offsetY = this.offsetY.getFloat();
+    private void drawHorizontalLegend(@NonNull Canvas canvas) {
+        float computedOffsetY = this.offsetY.getFloat();
         String[] usableTicks = this.ticks == null ?
             scale.ticksLegend(this.ticksNumber) : this.ticks;
         float coordinateY = orientation == AxisOrientation.TOP ?
-            offsetY - innerTickSize : offsetY + innerTickSize;
+            computedOffsetY - innerTickSize : computedOffsetY + innerTickSize;
         coordinateY += legendProperties.offsetY();
 
         for (int i = 0; i < usableTicks.length; i++) {
@@ -682,30 +711,30 @@ public class D3Axis<T> extends D3Drawable {
     }
 
     private void drawSingleHorizontalLegend(
-        Canvas canvas,
-        String[] ticks,
+        @NonNull Canvas canvas,
+        @NonNull String[] ticks,
         float coordinateY,
         int i
     ) {
-        float offsetX = this.offsetX.getFloat();
-        float coordinateX = offsetX + lastBoundRange() * i / (ticksNumber - 1.0f)
-            + firstBoundRange() * (ticksNumber - i - 1.0f) / (ticksNumber - 1.0f);
+        float computedOffsetX = this.offsetX.getFloat();
+        float coordinateX = computedOffsetX + lastBoundRange() * i / (ticksNumber - 1F)
+            + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
         coordinateX += legendProperties.offsetX();
         coordinateX -= alignmentHorizontalOffset(ticks[i]);
-        coordinateY += orientation == AxisOrientation.TOP ? 0 :
-            TextHelper.getTextHeight("" + ticks[i], textPaint);
+        float realCoordinateY = coordinateY + (orientation == AxisOrientation.TOP ? 0 :
+            TextHelper.getTextHeight(ticks[i], textPaint));
 
-        canvas.drawText(ticks[i], coordinateX, coordinateY, textPaint);
+        canvas.drawText(ticks[i], coordinateX, realCoordinateY, textPaint);
     }
 
-    private float alignmentHorizontalOffset(String legend) {
+    private float alignmentHorizontalOffset(@NonNull String legend) {
         switch (legendProperties.horizontalAlignement()) {
             case LEFT:
                 return textPaint.measureText(legend);
             case CENTER:
-                return textPaint.measureText(legend) / 2.0f;
+                return textPaint.measureText(legend) / 2F;
             default:
-                return 0.0f;
+                return 0F;
         }
     }
 }
