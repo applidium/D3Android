@@ -172,6 +172,22 @@ public class D3Polygon extends D3Drawable {
         }
     }
 
+    public float centroidX() {
+        return average(x);
+    }
+
+    private float average(float[] array) {
+        float result = 0f;
+        for (int i = 0; i < array.length; i++) {
+            result += array[i];
+        }
+        return result / array.length;
+    }
+
+    public float centroidY() {
+        return average(y);
+    }
+
     @Override public void draw(Canvas canvas) {
         Path path = new Path();
         path.setFillType(Path.FillType.WINDING);
