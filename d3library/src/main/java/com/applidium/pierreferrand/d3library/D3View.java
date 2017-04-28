@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.os.Handler;
 import android.os.Looper;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
@@ -17,19 +18,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class D3View extends SurfaceView implements Runnable {
-    private Thread thread;
+    @NonNull private Thread thread;
     private boolean mustRun = true;
 
-    /***
+    /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
      * can modify the UI.
      */
-    private final Handler handler;
+    @NonNull private final Handler handler;
 
     private boolean clickTracker;
 
-    public final List<D3Drawable> drawables;
-    public final List<Action> afterDrawActions;
+    @NonNull private final List<D3Drawable> drawables;
+    @NonNull public final List<Action> afterDrawActions;
 
 
     public D3View(Context context, @Nullable AttributeSet attrs) {
@@ -45,19 +46,45 @@ public class D3View extends SurfaceView implements Runnable {
         thread.start();
     }
 
-    public void add(D3Drawable drawable) {
+    /**
+     * Adds a Drawable to the list of displayed Drawables.
+     */
+    public void add(@NonNull D3Drawable drawable) {
         drawables.add(drawable);
     }
 
+    /**
+     * Removes a Drawable to the list of displayed Drawables.
+     */
+    public void remove(@NonNull D3Drawable drawable) {
+        drawables.remove(drawable);
+    }
+
+    /**
+     * Clears the list of displayed Drawables.
+     */
+    public void clearDrawables() {
+        drawables.clear();
+    }
+
+    /**
+     * Resumes the display of Drawables.
+     */
     public void onResume() {
         mustRun = true;
         launchDisplay();
     }
 
+    /**
+     * Stops the display of Drawables.
+     */
     public void onPause() {
         mustRun = false;
     }
 
+    /**
+     * This inner method should not be called.
+     */
     @Override public void run() {
         while (mustRun) {
             if (!getHolder().getSurface().isValid()) {
@@ -71,6 +98,9 @@ public class D3View extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * This inner method should not be called.
+     */
     @Override public void draw(Canvas canvas) {
         super.draw(canvas);
         canvas.drawRGB(255, 255, 255);
@@ -90,14 +120,15 @@ public class D3View extends SurfaceView implements Runnable {
         }
     }
 
+    /**
+     * This inner method should not be called
+     */
     @Override public boolean onTouchEvent(MotionEvent event) {
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_MOVE:
                 return handleMoveAction(event);
             case MotionEvent.ACTION_UP:
                 handleUpAction(event);
-                break;
-            case MotionEvent.ACTION_POINTER_UP:
                 break;
             case MotionEvent.ACTION_DOWN:
                 handleDownAction(event);
@@ -142,7 +173,7 @@ public class D3View extends SurfaceView implements Runnable {
         clickTracker = false;
     }
 
-    private void handlePinchMovement(MotionEvent event) {
+    private void handlePinchMovement(@NonNull MotionEvent event) {
         float[] maxDifferenceAbsolute = new float[event.getPointerCount()];
         float[] differenceX = new float[event.getPointerCount()];
         float[] differenceY = new float[event.getPointerCount()];
@@ -167,7 +198,10 @@ public class D3View extends SurfaceView implements Runnable {
     }
 
     private void computeDifferences(
-        MotionEvent event, float[] maxDifferenceAbsolute, float[] differenceX, float[] differenceY
+        @NonNull MotionEvent event,
+        @NonNull float[] maxDifferenceAbsolute,
+        @NonNull float[] differenceX,
+        @NonNull float[] differenceY
     ) {
         int historySize = event.getHistorySize();
         for (int i = 0; i < maxDifferenceAbsolute.length; i++) {
@@ -177,7 +211,7 @@ public class D3View extends SurfaceView implements Runnable {
         }
     }
 
-    private int findFingerMovedIndex(float[] maxDifferenceAbsolute) {
+    private int findFingerMovedIndex(@NonNull float[] maxDifferenceAbsolute) {
         int result = 0;
         float diffMovementAbsolute = maxDifferenceAbsolute[0];
         for (int i = 1; i < maxDifferenceAbsolute.length; i++) {
@@ -189,7 +223,9 @@ public class D3View extends SurfaceView implements Runnable {
         return result;
     }
 
-    private PinchType computePinchType(MotionEvent event, float a, float a1, int indexMovement) {
+    private PinchType computePinchType(
+        @NonNull MotionEvent event, float a, float a1, int indexMovement
+    ) {
         if (Math.abs(a) > Math.abs(a1)) {
             if (event.getX(indexMovement) > event.getX(1 - indexMovement)) {
                 return a > 0 ?
@@ -209,16 +245,16 @@ public class D3View extends SurfaceView implements Runnable {
         }
     }
 
-    private void handleScrollMovement(MotionEvent event, int historySize) {
+    private void handleScrollMovement(@NonNull MotionEvent event, int historySize) {
         ScrollDirection direction;
         float previousX = event.getHistoricalX(historySize - 1);
         float previousY = event.getHistoricalY(historySize - 1);
         float diffX = event.getX() - previousX;
         float diffY = event.getY() - previousY;
         if (Math.abs(diffX) > Math.abs(diffY)) {
-            direction = diffX > 0f ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
+            direction = diffX > 0F ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
         } else {
-            direction = diffY > 0f ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
+            direction = diffY > 0F ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
         }
         for (D3Drawable drawable : drawables) {
             drawable.onScroll(direction, previousX, previousY, diffX, diffY);
