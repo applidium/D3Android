@@ -188,6 +188,25 @@ public class D3Polygon extends D3Drawable {
         return average(y);
     }
 
+    public boolean contains(float coordinateX, float coordinateY) {
+        float x1, y1;
+        float x0 = x[x.length - 1];
+        float y0 = y[x.length - 1];
+        boolean inside = false;
+
+        for (int i = 0; i < x.length; i++) {
+            x1 = x[i];
+            y1 = y[i];
+            if (((y1 > coordinateY) != (y0 > coordinateY))
+                && (coordinateX < (x0 - x1) * (coordinateY - y1) / (y0 - y1) + x1)) {
+                inside = !inside;
+            }
+            x0 = x1;
+            y0 = y1;
+        }
+        return inside;
+    }
+
     @Override public void draw(Canvas canvas) {
         Path path = new Path();
         path.setFillType(Path.FillType.WINDING);
