@@ -19,7 +19,7 @@ public class MainActivity extends Activity {
         view = (D3View) findViewById(R.id.test);
 
         polygon = new D3Polygon()
-            .coordinate(
+            .coordinates(
                 new float[]{0.5f, 0.0f, 1f, 1f, 0f, 0.33f, 1f, 0.33f, 0f, 01f}
             )
             .proportional(true);
