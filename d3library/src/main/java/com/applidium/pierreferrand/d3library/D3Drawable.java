@@ -5,18 +5,26 @@ import android.support.annotation.Nullable;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
+import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 
 public abstract class D3Drawable {
     private static final float DEFAULT_STROKE_WIDTH = 5.0F;
 
+    @Nullable private D3FloatFunction leftLimit;
+    @Nullable private D3FloatFunction rightLimit;
+    @Nullable private D3FloatFunction topLimit;
+    @Nullable private D3FloatFunction bottomLimit;
+
     private float height;
     private float width;
+    private int canvasState;
 
     @Nullable private OnClickAction onClickAction;
     @Nullable private OnScrollAction onScrollAction;
@@ -131,5 +139,50 @@ public abstract class D3Drawable {
     public void prepareParameters() {
         /* Nothing to do. Child classes can override this method to launch computation
          * of parameters before drawing. */
+    }
+
+    /**
+     * Defines the rectangle limit in which the Drawable can draw itself.
+     */
+    public D3Drawable setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        this.leftLimit = leftLimit;
+        this.topLimit = topLimit;
+        this.rightLimit = rightLimit;
+        this.bottomLimit = bottomLimit;
+        return this;
+    }
+
+    /**
+     * Deletes the rectangle limit in which the Drawable can draw itself.
+     */
+    public D3Drawable deleteClipRect() {
+        leftLimit = null;
+        rightLimit = null;
+        topLimit = null;
+        bottomLimit = null;
+        return this;
+    }
+
+    final void preDraw(@NonNull Canvas canvas) {
+        if (leftLimit != null) {
+            canvasState = canvas.save();
+            canvas.clipRect(
+                leftLimit.getFloat(),
+                topLimit.getFloat(),
+                rightLimit.getFloat(),
+                bottomLimit.getFloat()
+            );
+        }
+    }
+
+    final void postDraw(@NonNull Canvas canvas) {
+        if (leftLimit != null) {
+            canvas.restoreToCount(canvasState);
+        }
     }
 }
