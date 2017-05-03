@@ -28,6 +28,7 @@ public class D3Arc<T> extends D3Drawable {
     private static final String OUTER_RADIUS_ERROR = "OuterRadius should not be null.";
     private static final String DATA_ERROR = "Data should not be null.";
     private static final String SUM_WEIGHT_ERROR = "Sum of weight must be different from 0";
+    private static final String ANGLES_ERROR = "Angles should have been calculated";
 
     @NonNull private int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
 
@@ -396,49 +397,37 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     @Override public void draw(@NonNull Canvas canvas) {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-        float[] computedWeights = weights();
-        float totalWeight = 0F;
-
-        for (int i = 0; i < data.length; i++) {
-            totalWeight += computedWeights[i];
-        }
-        if (totalWeight == 0F) {
-            return;
-        }
-
-        drawPie(canvas, computedWeights, totalWeight);
-        drawLabels(canvas, computedWeights, totalWeight);
+        drawPie(canvas);
+        drawLabels(canvas);
     }
 
-    private void drawPie(@NonNull Canvas canvas, @NonNull float[] weights, float totalWeight) {
+    private void drawPie(@NonNull Canvas canvas) {
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);
         }
+        if (preComputedAngles == null) {
+            throw new IllegalStateException(ANGLES_ERROR);
+        }
         float computedOuterRadius = outerRadius();
-        float currentAngle = startAngle.getFloat() - padAngle / 2F;
-
         Bitmap bitmap = Bitmap.createBitmap(
             (int) (2 * computedOuterRadius),
             (int) (2 * computedOuterRadius), Bitmap.Config.ARGB_8888
         );
+
         Canvas c = new Canvas(bitmap);
+        Angles computedAngles = preComputedAngles.getValue();
         for (int i = 0; i < data.length; i++) {
             paint.setColor(colors[i % colors.length]);
-            float drawAngle = (CIRCLE_ANGLE - weights.length * padAngle) * weights[i] / totalWeight;
             c.drawArc(
                 0F,
                 0F,
                 2F * computedOuterRadius,
                 2F * computedOuterRadius,
-                currentAngle,
-                -drawAngle,
+                computedAngles.startAngles[i],
+                computedAngles.drawAngles[i],
                 true,
                 paint
             );
-            currentAngle -= drawAngle + padAngle;
         }
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         c.drawCircle(computedOuterRadius, computedOuterRadius, innerRadius(), paint);
@@ -448,7 +437,7 @@ public class D3Arc<T> extends D3Drawable {
     }
 
 
-    private void drawLabels(@NonNull Canvas canvas, @NonNull float[] weights, float totalWeight) {
+    private void drawLabels(@NonNull Canvas canvas) {
         if (labels == null) {
             return;
         }
@@ -456,21 +445,31 @@ public class D3Arc<T> extends D3Drawable {
             throw new IllegalStateException(DATA_ERROR);
         }
 
-        float currentAngle = 0F;
+        if (preComputedAngles == null) {
+            throw new IllegalStateException(ANGLES_ERROR);
+        }
+        Angles computedAngles = preComputedAngles.getValue();
+
         float radius = (outerRadius() + innerRadius()) / 2F;
         float realOffsetX = offsetX() + outerRadius();
         float realOffsetY = offsetY() + outerRadius();
+        float currentAngle;
+        float nextAngle;
+        float radianAngle;
+        float coordinateX;
+        float coordinateY;
 
         for (int i = 0; i < data.length; i++) {
             textPaint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
-            float nextAngle = currentAngle + CIRCLE_ANGLE * weights[i] / totalWeight;
-            float radianAngle = (float) Math.toRadians((nextAngle + currentAngle) / 2F);
-            float coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
+            currentAngle = computedAngles.startAngles[i];
+            nextAngle = currentAngle + computedAngles.drawAngles[i];
+            radianAngle = (float) Math.toRadians(-(nextAngle + currentAngle) / 2F);
+
+            coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
             coordinateX -= textPaint.measureText(labels[i]) / 2F;
-            float coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
+            coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
             coordinateY += TextHelper.getTextHeight(labels[i], textPaint) / 2F;
             canvas.drawText(labels[i], coordinateX, coordinateY, textPaint);
-            currentAngle = nextAngle;
         }
     }
 
