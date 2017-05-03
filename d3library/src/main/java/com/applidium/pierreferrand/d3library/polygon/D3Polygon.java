@@ -9,13 +9,14 @@ import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 
 import java.util.Arrays;
 
 public class D3Polygon extends D3Drawable {
     private static final String X_ERROR = "X should not be null";
     private static final String Y_ERROR = "Y should not be null";
-    
+
     @Nullable private float[] x;
     @Nullable private float[] y;
     private boolean proportional;
@@ -133,6 +134,21 @@ public class D3Polygon extends D3Drawable {
 
     @Override public D3Polygon onPinchAction(@NonNull OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
+        return this;
+    }
+
+    @Override public D3Polygon setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3Polygon deleteClipRect() {
+        super.deleteClipRect();
         return this;
     }
 

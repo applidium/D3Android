@@ -591,6 +591,21 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
+    @Override public D3Axis<T> setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3Axis<T> deleteClipRect() {
+        super.deleteClipRect();
+        return this;
+    }
+
     @Override public void draw(@NonNull Canvas canvas) {
         drawLine(canvas);
         drawTicks(canvas);

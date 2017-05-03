@@ -43,6 +43,21 @@ public class D3Area<T> extends D3Line<T> {
         return this;
     }
 
+    @Override public D3Area<T> setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3Area<T> deleteClipRect() {
+        super.deleteClipRect();
+        return this;
+    }
+
     @Override public D3Area<T> x(@NonNull D3DataMapperFunction<T> x) {
         super.x(x);
         return this;

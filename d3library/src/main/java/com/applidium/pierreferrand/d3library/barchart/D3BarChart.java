@@ -225,6 +225,21 @@ public class D3BarChart<T> extends D3Drawable {
         return this;
     }
 
+    @Override public D3BarChart<T> setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3BarChart<T> deleteClipRect() {
+        super.deleteClipRect();
+        return this;
+    }
+
     @Override public void draw(@NonNull Canvas canvas) {
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);

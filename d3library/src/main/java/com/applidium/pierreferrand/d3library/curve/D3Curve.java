@@ -10,6 +10,7 @@ import com.applidium.pierreferrand.d3library.Line.D3Line;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
@@ -173,6 +174,21 @@ public class D3Curve<T> extends D3Line<T> {
         final Object keyY = new Object();
         ticksX = new ValueStorage<>(getTicksXRunnable(keyX), keyX);
         ticksY = new ValueStorage<>(getTicksYRunnable(keyY), keyY);
+    }
+
+    @Override public D3Curve<T> setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3Curve<T> deleteClipRect() {
+        super.deleteClipRect();
+        return this;
     }
 
     @NonNull private ValueRunnable<float[]> getTicksXRunnable(@NonNull final Object keyX) {
