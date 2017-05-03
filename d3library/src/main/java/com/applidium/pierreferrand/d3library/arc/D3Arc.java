@@ -318,6 +318,12 @@ public class D3Arc<T> extends D3Drawable {
      * Return null if it does not match any part.
      */
     @Nullable public T dataFromPosition(float x, float y) {
+        if (data == null) {
+            throw new IllegalStateException(DATA_ERROR);
+        }
+        if (preComputedAngles == null) {
+            throw new IllegalStateException(ANGLES_ERROR);
+        }
         float xCenter = offsetX() + outerRadius();
         float yCenter = offsetY() + outerRadius();
 
@@ -325,7 +331,7 @@ public class D3Arc<T> extends D3Drawable {
         float diffY = y - yCenter;
 
         float radius = (float) Math.hypot(diffX, diffY);
-        if (data == null || radius < innerRadius() || radius > outerRadius()) {
+        if (radius < innerRadius() || radius > outerRadius()) {
             return null;
         }
 
@@ -333,25 +339,24 @@ public class D3Arc<T> extends D3Drawable {
         angle += angle < 0F ? Math.PI : 0F;
         angle += diffY < 0F ? Math.PI : 0F;
         angle = (float) (angle * HALF_CIRCLE_ANGLE / Math.PI);
-        angle = CIRCLE_ANGLE - angle;
 
-        float[] computedWeights = this.weights();
-        float totalWeight = 0F;
+        Angles computedAngles = preComputedAngles.getValue();
 
         for (int i = 0; i < data.length; i++) {
-            totalWeight += computedWeights[i];
+            if (inAngles(angle, computedAngles.startAngles[i], computedAngles.drawAngles[i])) {
+                return data[i];
+            }
         }
-        if (totalWeight == 0F) {
-            return null;
-        }
+        return null;
+    }
 
-        float currentAngle = 0F;
-        int indexData = -1;
-        while (currentAngle < angle) {
-            indexData++;
-            currentAngle += CIRCLE_ANGLE * computedWeights[indexData] / totalWeight;
+
+    private boolean inAngles(float angle, float startAngle, float drawAngle) {
+        if (startAngle + drawAngle > CIRCLE_ANGLE) {
+            return (angle > startAngle) || (angle < (startAngle + drawAngle) % CIRCLE_ANGLE);
+        } else {
+            return (angle > startAngle) && (angle < startAngle + drawAngle);
         }
-        return data[indexData];
     }
 
     /**
