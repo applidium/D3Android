@@ -507,12 +507,19 @@ public class D3Arc<T> extends D3Drawable {
         }
 
         Angles angles = new Angles(data.length);
-        angles.startAngles[0] = startAngle.getFloat() - padAngle / 2F;
+        angles.startAngles[0] = (startAngle.getFloat() - padAngle / 2F) % CIRCLE_ANGLE;
+        if (angles.startAngles[0] < 0.0F) {
+            angles.startAngles[0] += CIRCLE_ANGLE;
+        }
         angles.drawAngles[0] = (CIRCLE_ANGLE - data.length * padAngle)
             * computedWeights[0] / totalWeight;
 
         for (int i = 1; i < data.length; i++) {
-            angles.startAngles[i] = angles.startAngles[i - 1] + angles.drawAngles[i - 1] + padAngle;
+            angles.startAngles[i] = (angles.startAngles[i - 1] + angles.drawAngles[i - 1]
+                + padAngle) % CIRCLE_ANGLE;
+            if (angles.startAngles[i] < 0.0F) {
+                angles.startAngles[i] += CIRCLE_ANGLE;
+            }
             angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * padAngle) *
                 computedWeights[i] / totalWeight;
         }
