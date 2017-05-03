@@ -1,6 +1,8 @@
 package com.applidium.pierreferrand.d3library.barchart;
 
 import android.graphics.Canvas;
+import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
@@ -13,24 +15,29 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class D3StackBarChart<T> extends D3Drawable {
+    private static final String DATA_WIDTH_ERROR = "DataWidth should not be null";
 
-    private List<D3BarChart<T>> barCharts;
-
-    private D3FloatFunction dataWidth;
+    @NonNull private List<D3BarChart<T>> barCharts;
+    @Nullable private D3FloatFunction dataWidth;
 
     public D3StackBarChart() {
         this(null);
     }
 
-    public D3StackBarChart(T[] data, int stackNumber) {
+    public D3StackBarChart(@NonNull T[] data, int stackNumber) {
         data(data, stackNumber);
     }
 
-    public D3StackBarChart(T[][] data) {
+    public D3StackBarChart(@NonNull T[][] data) {
         data(data);
     }
 
-    public D3StackBarChart<T> data(T[] data, int stackNumber) {
+    /**
+     * Sets the data for the different StackBar.
+     *
+     * @param stackNumber Defines the number of stack for the StackBarChart
+     */
+    public D3StackBarChart<T> data(@NonNull T[] data, int stackNumber) {
         barCharts = new ArrayList<>();
         for (int i = 0; i < stackNumber; i++) {
             barCharts.add(new D3BarChart<>(data));
@@ -38,18 +45,30 @@ public class D3StackBarChart<T> extends D3Drawable {
         return this;
     }
 
-    public D3StackBarChart<T> data(T[][] data) {
+    /**
+     * Sets the data for the different StackBar.
+     */
+    public D3StackBarChart<T> data(@NonNull T[][] data) {
         barCharts = new ArrayList<>();
-        for (int i = 0; i < data.length; i++) {
-            barCharts.add(new D3BarChart<>(data[i]));
+        for (T[] tab : data) {
+            barCharts.add(new D3BarChart<>(tab));
         }
         return this;
     }
 
+    /**
+     * Returns the width of the bars.
+     */
     public float dataWidth() {
+        if (dataWidth == null) {
+            throw new IllegalStateException(DATA_WIDTH_ERROR);
+        }
         return dataWidth.getFloat();
     }
 
+    /**
+     * Sets the width of the bars.
+     */
     public D3StackBarChart<T> dataWidth(final float dataWidth) {
         return dataWidth(new D3FloatFunction() {
             @Override public float getFloat() {
@@ -58,7 +77,10 @@ public class D3StackBarChart<T> extends D3Drawable {
         });
     }
 
-    public D3StackBarChart<T> dataWidth(D3FloatFunction dataWidth) {
+    /**
+     * Sets the width of the bars.
+     */
+    public D3StackBarChart<T> dataWidth(@NonNull D3FloatFunction dataWidth) {
         this.dataWidth = dataWidth;
         for (D3BarChart barChart : barCharts) {
             barChart.dataWidth(dataWidth);
@@ -66,21 +88,33 @@ public class D3StackBarChart<T> extends D3Drawable {
         return this;
     }
 
+    /**
+     * Returns the horizontal coordinates of the middle of the bars.
+     */
     public float[] x() {
         return barCharts.get(0).x();
     }
 
-    public D3StackBarChart<T> x(D3DataMapperFunction<T> x) {
+    /**
+     * Sets horizontal coordinates of the middle of the bars.
+     */
+    public D3StackBarChart<T> x(@NonNull D3DataMapperFunction<T> x) {
         for (D3BarChart<T> barChart : barCharts) {
             barChart.x(x);
         }
         return this;
     }
 
-    public float[] y() {
+    /**
+     * Returns the vertical coordinates of the bottom of the bars.
+     */
+    @NonNull public float[] y() {
         return barCharts.get(0).y();
     }
 
+    /**
+     * Sets the vertical coordinates of the bottom of the bars.
+     */
     public D3StackBarChart<T> y(final float y) {
         return y(new D3DataMapperFunction<T>() {
             @Override public float compute(T object, int position, T[] data) {
@@ -89,7 +123,10 @@ public class D3StackBarChart<T> extends D3Drawable {
         });
     }
 
-    public D3StackBarChart<T> y(D3DataMapperFunction<T> y) {
+    /**
+     * Sets the vertical coordinates of the bottom of the bars.
+     */
+    public D3StackBarChart<T> y(@NonNull D3DataMapperFunction<T> y) {
         barCharts.get(0).y(y);
         for (int i = 1; i < barCharts.size(); i++) {
             final int finalI = i;
@@ -103,7 +140,10 @@ public class D3StackBarChart<T> extends D3Drawable {
         return this;
     }
 
-    public D3StackBarChart<T> dataHeight(final float[][] dataHeight) {
+    /**
+     * Sets the different heights for the stacks of BarChart.
+     */
+    public D3StackBarChart<T> dataHeight(@NonNull final float[][] dataHeight) {
         for (int i = 0; i < dataHeight.length; i++) {
             final int finalI = i;
             barCharts.get(i).dataHeight(new D3DataMapperFunction<T>() {
@@ -117,14 +157,21 @@ public class D3StackBarChart<T> extends D3Drawable {
         return this;
     }
 
-    public D3StackBarChart<T> dataHeight(List<D3DataMapperFunction<T>> dataHeight) {
+    /**
+     * Sets the different heights for the stacks of BarChart.
+     */
+    public D3StackBarChart<T> dataHeight(@NonNull List<D3DataMapperFunction<T>> dataHeight) {
         for (int i = 0; i < dataHeight.size(); i++) {
             barCharts.get(i).dataHeight(dataHeight.get(i));
         }
         return this;
     }
 
-    public int[][] colors() {
+    /**
+     * Returns the colors used for the stacks of BarCharts. Each array are for a stack. For each
+     * stack if there are more data than colors, the colors are used circularly.
+     */
+    @NonNull public int[][] colors() {
         int[][] result = new int[barCharts.size()][];
         for (int i = 0; i < result.length; i++) {
             result[i] = barCharts.get(i).colors();
@@ -132,29 +179,33 @@ public class D3StackBarChart<T> extends D3Drawable {
         return result;
     }
 
-    public D3StackBarChart<T> colors(int[][] colors) {
+    /**
+     * Sets the colors used for the stacks of BarCharts. Each array are for a stack. For each
+     * stack if there are more data than colors, the colors are used circularly.
+     */
+    public D3StackBarChart<T> colors(@NonNull int[][] colors) {
         for (int i = 0; i < barCharts.size(); i++) {
             barCharts.get(i).colors(colors[i % colors.length]);
         }
         return this;
     }
 
-    @Override public D3StackBarChart<T> onClickAction(OnClickAction onClickAction) {
+    @Override public D3StackBarChart<T> onClickAction(@NonNull OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3StackBarChart<T> onScrollAction(OnScrollAction onScrollAction) {
+    @Override public D3StackBarChart<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3StackBarChart<T> onPinchAction(OnPinchAction onPinchAction) {
+    @Override public D3StackBarChart<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
 
-    @Override public void draw(Canvas canvas) {
+    @Override public void draw(@NonNull Canvas canvas) {
         for (D3BarChart<T> barChart : barCharts) {
             barChart.draw(canvas);
         }
