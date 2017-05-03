@@ -35,6 +35,7 @@ public class D3Arc<T> extends D3Drawable {
 
     @NonNull private D3FloatFunction offsetX;
     @NonNull private D3FloatFunction offsetY;
+    @NonNull private D3FloatFunction startAngle;
 
     @Nullable private T[] data;
     @Nullable private D3DataMapperFunction<T> weights;
@@ -61,6 +62,7 @@ public class D3Arc<T> extends D3Drawable {
                 return Math.min(height(), width()) / 2;
             }
         });
+        startAngle(0F);
         offsetX(0F);
         offsetY(0F);
         padAngle(DEFAULT_PAD_ANGLE);
@@ -347,6 +349,33 @@ public class D3Arc<T> extends D3Drawable {
         return data[indexData];
     }
 
+    /**
+     * Returns the start angle for the arc
+     */
+    public float startAngle() {
+        return startAngle.getFloat();
+    }
+
+    /**
+     * Sets the start angle for the arc
+     */
+    public D3Arc<T> startAngle(final float startAngle) {
+        startAngle(new D3FloatFunction() {
+            @Override public float getFloat() {
+                return startAngle;
+            }
+        });
+        return this;
+    }
+
+    /**
+     * Sets the start angle for the arc
+     */
+    public D3Arc<T> startAngle(@NonNull D3FloatFunction startAngle) {
+        this.startAngle = startAngle;
+        return this;
+    }
+
     @Override public D3Arc<T> onClickAction(@NonNull OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
@@ -385,7 +414,7 @@ public class D3Arc<T> extends D3Drawable {
             throw new IllegalStateException(DATA_ERROR);
         }
         float computedOuterRadius = outerRadius();
-        float currentAngle = -padAngle / 2F;
+        float currentAngle = startAngle.getFloat() - padAngle / 2F;
 
         Bitmap bitmap = Bitmap.createBitmap(
             (int) (2 * computedOuterRadius),
