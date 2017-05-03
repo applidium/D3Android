@@ -1,7 +1,6 @@
 package com.applidium.pierreferrand.d3library.Line;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
 
@@ -22,8 +21,6 @@ import java.util.concurrent.Executors;
 
 public class D3Line<T> extends D3Drawable {
 
-    private static final float DEFAULT_STROKE_WIDTH = 5.0f;
-
     private ValueStorage<float[]> storeX;
     private ValueStorage<float[]> storeY;
 
@@ -31,7 +28,6 @@ public class D3Line<T> extends D3Drawable {
     private D3DataMapperFunction<T> x;
     private D3DataMapperFunction<T> y;
 
-    protected Paint paint;
     protected Interpolator interpolator;
 
     public D3Line() {
@@ -42,13 +38,6 @@ public class D3Line<T> extends D3Drawable {
         this.data = data.clone();
         interpolator = new LinearInterpolator();
         setupPaint();
-    }
-
-    private void setupPaint() {
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(new Color().rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(DEFAULT_STROKE_WIDTH);
     }
 
     public float[] x() {

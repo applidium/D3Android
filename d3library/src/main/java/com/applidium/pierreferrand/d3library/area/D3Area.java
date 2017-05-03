@@ -21,6 +21,7 @@ public class D3Area<T> extends D3Line<T> {
 
     public D3Area(T[] data) {
         super(data);
+        setupPaint();
     }
 
     @Override public D3Area<T> onClickAction(OnClickAction onClickAction) {

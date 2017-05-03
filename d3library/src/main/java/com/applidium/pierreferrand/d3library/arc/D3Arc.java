@@ -34,6 +34,7 @@ public class D3Arc<T> extends D3Drawable {
     private D3DataMapperFunction<T> weights;
 
     private String[] labels;
+    private Paint textPaint;
 
     public D3Arc() {
         this(null);
@@ -55,6 +56,14 @@ public class D3Arc<T> extends D3Drawable {
         offsetX(0f);
         offsetY(0f);
         padAngle(DEFAULT_PAD_ANGLE);
+        setupPaint();
+    }
+
+    @Override protected void setupPaint() {
+        super.setupPaint();
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setTextSize(DEFAULT_LABEL_TEXT_SIZE);
+        textPaint.setStyle(Paint.Style.FILL);
     }
 
     public float innerRadius() {
@@ -285,9 +294,6 @@ public class D3Arc<T> extends D3Drawable {
         float outerRadius = outerRadius();
         float currentAngle = -padAngle / 2f;
 
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setStyle(Paint.Style.FILL);
-
         Bitmap bitmap = Bitmap.createBitmap(
             (int) (2 * outerRadius), (int) (2 * outerRadius), Bitmap.Config.ARGB_8888
         );
@@ -309,6 +315,7 @@ public class D3Arc<T> extends D3Drawable {
         }
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         c.drawCircle(outerRadius, outerRadius, innerRadius(), paint);
+        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
 
         canvas.drawBitmap(bitmap, offsetX(), offsetY(), null);
     }
@@ -324,19 +331,15 @@ public class D3Arc<T> extends D3Drawable {
         float realOffsetX = offsetX() + outerRadius();
         float realOffsetY = offsetY() + outerRadius();
 
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setTextSize(DEFAULT_LABEL_TEXT_SIZE);
-        paint.setStyle(Paint.Style.FILL);
-
         for (int i = 0; i < data.length; i++) {
-            paint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
+            textPaint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
             float nextAngle = currentAngle + 360.0f * weights[i] / totalWeight;
             float radianAngle = (float) Math.toRadians((nextAngle + currentAngle) / 2f);
             float coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
-            coordinateX -= paint.measureText(labels[i]) / 2f;
+            coordinateX -= textPaint.measureText(labels[i]) / 2f;
             float coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
-            coordinateY += TextHelper.getTextHeight(labels[i], paint) / 2f;
-            canvas.drawText(labels[i], coordinateX, coordinateY, paint);
+            coordinateY += TextHelper.getTextHeight(labels[i], textPaint) / 2f;
+            canvas.drawText(labels[i], coordinateX, coordinateY, textPaint);
             currentAngle = nextAngle;
         }
     }

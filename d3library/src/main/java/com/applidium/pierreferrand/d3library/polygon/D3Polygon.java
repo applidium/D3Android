@@ -1,8 +1,6 @@
 package com.applidium.pierreferrand.d3library.polygon;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
-import android.graphics.Paint;
 import android.graphics.Path;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
@@ -13,24 +11,13 @@ import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import java.util.Arrays;
 
 public class D3Polygon extends D3Drawable {
-
-    private static final float DEFAULT_STROKE_WIDTH = 5.0f;
-
     private float[] x;
     private float[] y;
 
     private boolean proportional;
-    private Paint paint;
 
     public D3Polygon() {
         setupPaint();
-    }
-
-    private void setupPaint() {
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(new Color().rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(DEFAULT_STROKE_WIDTH);
     }
 
     public float[] x() {

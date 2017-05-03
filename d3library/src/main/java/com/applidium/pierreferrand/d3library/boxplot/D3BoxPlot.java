@@ -1,7 +1,6 @@
 package com.applidium.pierreferrand.d3library.boxplot;
 
 import android.graphics.Canvas;
-import android.graphics.Paint;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
@@ -200,11 +199,6 @@ public class D3BoxPlot extends D3Drawable {
     }
 
     @Override public void draw(Canvas canvas) {
-        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setStyle(Paint.Style.STROKE);
-        paint.setColor(0xFF000000);
-        paint.setStrokeWidth(10f);
-
         float coordinateMax = scale.value(max);
         float coordinateMin = scale.value(min);
         float coordinateMedian = scale.value(median);

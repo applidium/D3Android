@@ -1,7 +1,6 @@
 package com.applidium.pierreferrand.d3library.axes;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
 import android.support.annotation.NonNull;
@@ -39,7 +38,6 @@ public class D3Axis<T> extends D3Drawable {
 
     private String[] ticks;
 
-    private Paint paint;
     private Paint textPaint;
 
     private LegendProperties legendProperties;
@@ -60,14 +58,13 @@ public class D3Axis<T> extends D3Drawable {
                 }
             });
         }
-
         setupProperties();
     }
 
     private void setupProperties() {
         translate(DEFAULT_OFFSET, DEFAULT_OFFSET);
         this.legendProperties = new LegendProperties();
-        setUpPaints();
+        setupPaint();
         setupDefaultActions();
     }
 
@@ -194,18 +191,14 @@ public class D3Axis<T> extends D3Drawable {
         setupProperties();
     }
 
-    private void setUpPaints() {
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(new Color().rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(DEFAULT_STROKE_WIDTH);
-
-        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        textPaint.setStyle(Paint.Style.FILL);
+    @Override protected void setupPaint() {
+        super.setupPaint();
         setupTextPaint();
     }
 
     private void setupTextPaint() {
+        textPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        textPaint.setStyle(Paint.Style.FILL);
         textPaint.setColor(legendProperties.color());
         textPaint.setTextSize(legendProperties.textSizeInPixels());
     }

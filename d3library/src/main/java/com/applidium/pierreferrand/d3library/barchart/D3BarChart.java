@@ -1,7 +1,6 @@
 package com.applidium.pierreferrand.d3library.barchart;
 
 import android.graphics.Canvas;
-import android.graphics.Paint;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
@@ -28,8 +27,6 @@ public class D3BarChart<T> extends D3Drawable {
      */
     private D3DataMapperFunction<T> y;
 
-    private Paint paint;
-
     public D3BarChart() {
         this(null);
     }
@@ -37,11 +34,6 @@ public class D3BarChart<T> extends D3Drawable {
     public D3BarChart(T[] data) {
         data(data);
         setupPaint();
-    }
-
-    private void setupPaint() {
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setStyle(Paint.Style.FILL);
     }
 
     public T[] data() {
