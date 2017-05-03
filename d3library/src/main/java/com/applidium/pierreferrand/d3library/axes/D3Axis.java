@@ -511,14 +511,14 @@ public class D3Axis<T> extends D3Drawable {
      * Returns the legend's vertical alignment.
      */
     public VerticalAlignment legendVerticalAlignment() {
-        return legendProperties.verticalAlignement();
+        return legendProperties.verticalAlignment();
     }
 
     /**
      * sets the legend's vertical alignment for a vertical Axis.
      */
     public D3Axis<T> legendVerticalAlignment(@NonNull VerticalAlignment verticalAlignment) {
-        legendProperties.verticalAlignement(verticalAlignment);
+        legendProperties.verticalAlignment(verticalAlignment);
         return this;
     }
 
@@ -687,7 +687,7 @@ public class D3Axis<T> extends D3Drawable {
 
     private float alignmentVerticalOffset(@NonNull String legend) {
         float height = TextHelper.getTextHeight(legend, textPaint);
-        switch (legendProperties.verticalAlignement()) {
+        switch (legendProperties.verticalAlignment()) {
             case BOTTOM:
                 return height;
             case CENTER:

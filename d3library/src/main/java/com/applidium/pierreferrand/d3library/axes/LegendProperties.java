@@ -2,16 +2,16 @@ package com.applidium.pierreferrand.d3library.axes;
 
 import android.graphics.Color;
 import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 
-public class LegendProperties {
+class LegendProperties {
+    private static final float DEFAULT_TEXT_SIZE = 15F;
 
-    private final static float DEFAULT_TEXT_SIZE = 15.0f;
+    @NonNull private VerticalAlignment verticalAlignment;
+    @NonNull private HorizontalAlignment horizontalAlignment;
 
-    private VerticalAlignment verticalAlignment;
-    private HorizontalAlignment horizontalAlignment;
-
-    private float offsetX = 0.0f;
-    private float offsetY = 0.0f;
+    private float offsetX = 0F;
+    private float offsetY = 0F;
 
     private float textSizeInPixels = DEFAULT_TEXT_SIZE;
 
@@ -21,66 +21,104 @@ public class LegendProperties {
         this(VerticalAlignment.TOP, HorizontalAlignment.RIGHT);
     }
 
-    public LegendProperties(VerticalAlignment verticalAlignment) {
+    public LegendProperties(@NonNull VerticalAlignment verticalAlignment) {
         this(verticalAlignment, HorizontalAlignment.RIGHT);
     }
 
-    public LegendProperties(HorizontalAlignment horizontalAlignment) {
+    public LegendProperties(@NonNull HorizontalAlignment horizontalAlignment) {
         this(VerticalAlignment.TOP, horizontalAlignment);
     }
 
     public LegendProperties(
-        VerticalAlignment verticalAlignment, HorizontalAlignment horizontalAlignment
+        @NonNull VerticalAlignment verticalAlignment,
+        @NonNull HorizontalAlignment horizontalAlignment
     ) {
         this.verticalAlignment = verticalAlignment;
         this.horizontalAlignment = horizontalAlignment;
-        color = new Color().rgb(0, 0, 0);
+        color = Color.rgb(0, 0, 0);
     }
 
-    public VerticalAlignment verticalAlignement() {
+    /**
+     * Returns the vertical alignment of the LegendProperties.
+     */
+    @NonNull public VerticalAlignment verticalAlignment() {
         return verticalAlignment;
     }
 
-    public void verticalAlignement(VerticalAlignment verticalAlignment) {
+    /**
+     * Sets the vertical alignment of the LegendProperties.
+     */
+    public void verticalAlignment(@NonNull VerticalAlignment verticalAlignment) {
         this.verticalAlignment = verticalAlignment;
     }
 
-    public HorizontalAlignment horizontalAlignement() {
+    /**
+     * Returns the horizontal alignment of the LegendProperties.
+     */
+    @NonNull public HorizontalAlignment horizontalAlignement() {
         return horizontalAlignment;
     }
 
-    public void horizontalAlignement(HorizontalAlignment horizontalAlignment) {
+    /**
+     * Sets the horizontal alignment of the LegendProperties.
+     */
+    public void horizontalAlignement(@NonNull HorizontalAlignment horizontalAlignment) {
         this.horizontalAlignment = horizontalAlignment;
     }
 
+    /**
+     * Returns the horizontal offset of the LegendProperties.
+     */
     public float offsetX() {
         return offsetX;
     }
 
+    /**
+     * Sets the horizontal offset of the LegendProperties.
+     */
     public void offsetX(float paddingX) {
         this.offsetX = paddingX;
     }
 
+    /**
+     * Returns the vertical offset of the LegendProperties.
+     */
     public float offsetY() {
         return offsetY;
     }
 
+    /**
+     * Sets the vertical offset of the LegendProperties.
+     */
     public void offsetY(float paddingY) {
         this.offsetY = paddingY;
     }
 
+
+    /**
+     * Returns the size of the text of the LegendProperties.
+     */
     public float textSizeInPixels() {
         return textSizeInPixels;
     }
 
+    /**
+     * Sets the size of the text of the LegendProperties.
+     */
     public void textSizeInPixels(float textSizeInPixels) {
         this.textSizeInPixels = textSizeInPixels;
     }
 
+    /**
+     * Returns the color of the text of the LegendProperties.
+     */
     public int color() {
         return color;
     }
 
+    /**
+     * Sets the color of the text of the LegendProperties.
+     */
     public void color(@ColorInt int color) {
         this.color = color;
     }
