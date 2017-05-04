@@ -44,6 +44,7 @@ public class D3Line<T> extends D3Drawable {
     public D3Line(@Nullable T[] data) {
         this.data = data != null ? data.clone() : null;
         interpolator = new LinearInterpolator();
+        onClickAction(null);
         setupPaint();
     }
 
@@ -216,17 +217,17 @@ public class D3Line<T> extends D3Drawable {
         return this;
     }
 
-    @Override public D3Line<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3Line<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Line<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3Line<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Line<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3Line<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }

@@ -94,6 +94,7 @@ public class D3Axis<T> extends D3Drawable {
             onScrollAction(getVerticalOnScrollAction());
             onPinchAction(getVerticalOnPinchAction());
         }
+        onClickAction(null);
     }
 
     @NonNull private OnScrollAction getHorizontalOnScrollAction() {
@@ -576,17 +577,17 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    @Override public D3Axis<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3Axis<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Axis<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3Axis<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Axis<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3Axis<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
