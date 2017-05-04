@@ -128,7 +128,6 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
         }
         canvas.drawRGB(255, 255, 255);
         for (D3Drawable drawable : drawables) {
-            drawable.setDimensions(getHeight(), getWidth());
             drawable.preDraw(canvas);
             drawable.draw(canvas);
             drawable.postDraw(canvas);
@@ -294,10 +293,12 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     }
 
     @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
-
+        for (D3Drawable drawable : drawables) {
+            drawable.setDimensions(getHeight(), getWidth());
+        }
     }
 
     @Override public void surfaceDestroyed(SurfaceHolder holder) {
-
+        onPause();
     }
 }

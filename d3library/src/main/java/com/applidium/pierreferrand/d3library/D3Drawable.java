@@ -97,6 +97,10 @@ public abstract class D3Drawable {
     final void setDimensions(float height, float width) {
         this.height = height;
         this.width = width;
+        onDimensionsChange(width, height);
+    }
+
+    protected void onDimensionsChange(float width, float height) {
     }
 
     /**
