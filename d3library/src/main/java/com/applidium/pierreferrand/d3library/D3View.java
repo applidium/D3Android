@@ -21,6 +21,10 @@ import java.util.List;
 public class D3View extends SurfaceView implements Runnable {
     private boolean mustRun = true;
 
+    private Object key = new Object();
+
+    private boolean needRedraw = true;
+
     /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
      * can modify the UI.
@@ -86,8 +90,14 @@ public class D3View extends SurfaceView implements Runnable {
      */
     @Override public void run() {
         while (mustRun) {
-            if (!getHolder().getSurface().isValid()) {
-                continue;
+            if (!needRedraw) {
+                try {
+                    synchronized (key) {
+                        key.wait();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
             Canvas c = getHolder().lockCanvas();
             if (c != null) {
@@ -102,10 +112,9 @@ public class D3View extends SurfaceView implements Runnable {
      */
     @Override public void draw(Canvas canvas) {
         super.draw(canvas);
-        boolean needToRedraw = false;
+        needRedraw = false;
         for (D3Drawable drawable : drawables) {
             drawable.prepareParameters();
-            needToRedraw = needToRedraw || drawable.calculationNeeded > 0;
         }
         canvas.drawRGB(255, 255, 255);
         for (D3Drawable drawable : drawables) {
@@ -113,6 +122,7 @@ public class D3View extends SurfaceView implements Runnable {
             drawable.preDraw(canvas);
             drawable.draw(canvas);
             drawable.postDraw(canvas);
+            needRedraw = needRedraw || drawable.calculationNeeded > 0;
         }
         for (final Action action : afterDrawActions) {
             handler.post(new Runnable() {
@@ -121,15 +131,16 @@ public class D3View extends SurfaceView implements Runnable {
                 }
             });
         }
-        if (!needToRedraw) {
-            onPause();
-        }
     }
 
     /**
      * This inner method should not be called
      */
     @Override public boolean onTouchEvent(MotionEvent event) {
+        needRedraw = true;
+        synchronized (key) {
+            key.notifyAll();
+        }
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_MOVE:
                 return handleMoveAction(event);
