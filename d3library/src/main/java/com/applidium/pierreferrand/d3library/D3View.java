@@ -19,6 +19,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class D3View extends SurfaceView implements Runnable {
+    /**
+     * Allows to have a proper click action, and to disable the transformation of a click action
+     * into a scroll action when the user moves a little his finger.
+     */
+    private static final int DEFAULT_CLICK_ACTIONS_NUMBER = 3;
     private boolean mustRun = true;
 
     private Object key = new Object();
@@ -31,7 +36,7 @@ public class D3View extends SurfaceView implements Runnable {
      */
     @NonNull private final Handler handler;
 
-    private boolean clickTracker;
+    private int clickTracker;
 
     @NonNull private final List<D3Drawable> drawables;
     @NonNull public final List<Action> afterDrawActions;
@@ -165,17 +170,17 @@ public class D3View extends SurfaceView implements Runnable {
             return true;
         }
         if (event.getPointerCount() == 2) {
-            clickTracker = false;
+            clickTracker = 0;
             handlePinchMovement(event);
         } else if (event.getPointerCount() == 1) {
-            clickTracker = false;
+            clickTracker = Math.max(clickTracker - 1, 0);
             handleScrollMovement(event, historySize);
         }
         return false;
     }
 
     private void handleUpAction(MotionEvent event) {
-        if (clickTracker) {
+        if (clickTracker > 0) {
             for (D3Drawable drawable : drawables) {
                 drawable.onClick(event.getX(), event.getY());
             }
@@ -183,11 +188,11 @@ public class D3View extends SurfaceView implements Runnable {
     }
 
     private void handleDownAction(MotionEvent event) {
-        clickTracker = event.getPointerCount() == 1;
+        clickTracker = event.getPointerCount() == 1 ? DEFAULT_CLICK_ACTIONS_NUMBER : 0;
     }
 
     private void handlePointerDownAction() {
-        clickTracker = false;
+        clickTracker = 0;
     }
 
     private void handlePinchMovement(@NonNull MotionEvent event) {
