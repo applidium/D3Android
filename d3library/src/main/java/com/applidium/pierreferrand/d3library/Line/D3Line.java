@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
+@SuppressWarnings("unused")
 public class D3Line<T> extends D3Drawable {
     private static final String X_ERROR = "X should not be null";
     private static final String DATA_ERROR = "Data should not be null";
@@ -196,6 +197,9 @@ public class D3Line<T> extends D3Drawable {
     }
 
     @Override public void prepareParameters() {
+        if (lazyRecomputing && calculationNeeded() == 0) {
+            return;
+        }
         storeX = new ValueStorage<>();
         storeX.setValue(buildRunnable(x));
         storeY = new ValueStorage<>();
@@ -229,6 +233,11 @@ public class D3Line<T> extends D3Drawable {
 
     @Override public D3Line<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
+        return this;
+    }
+
+    @Override public D3Line<T> lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
         return this;
     }
 
