@@ -102,10 +102,12 @@ public class D3View extends SurfaceView implements Runnable {
      */
     @Override public void draw(Canvas canvas) {
         super.draw(canvas);
-        canvas.drawRGB(255, 255, 255);
+        boolean needToRedraw = false;
         for (D3Drawable drawable : drawables) {
             drawable.prepareParameters();
+            needToRedraw = needToRedraw || drawable.calculationNeeded > 0;
         }
+        canvas.drawRGB(255, 255, 255);
         for (D3Drawable drawable : drawables) {
             drawable.setDimensions(getHeight(), getWidth());
             drawable.preDraw(canvas);
@@ -118,6 +120,9 @@ public class D3View extends SurfaceView implements Runnable {
                     action.execute();
                 }
             });
+        }
+        if (!needToRedraw) {
+            onPause();
         }
     }
 
