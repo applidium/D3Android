@@ -13,12 +13,12 @@ import android.view.SurfaceView;
 import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
+import com.applidium.pierreferrand.d3library.threading.ThreadPool;
 
 import java.util.ArrayList;
 import java.util.List;
 
 public class D3View extends SurfaceView implements Runnable {
-    @NonNull private Thread thread;
     private boolean mustRun = true;
 
     /**
@@ -42,8 +42,7 @@ public class D3View extends SurfaceView implements Runnable {
     }
 
     private void launchDisplay() {
-        thread = new Thread(this);
-        thread.start();
+        ThreadPool.execute(this);
     }
 
     /**

@@ -6,7 +6,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 public class ThreadPool {
-    public final static int coresNumber = Runtime.getRuntime().availableProcessors();
+    public final static int coresNumber = Runtime.getRuntime().availableProcessors() + 1;
     private static ExecutorService executor = Executors.newFixedThreadPool(coresNumber);
 
     public static void execute(List<Callable<Object>> todo) {
