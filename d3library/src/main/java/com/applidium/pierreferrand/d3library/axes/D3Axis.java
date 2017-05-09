@@ -1,5 +1,6 @@
 package com.applidium.pierreferrand.d3library.axes;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
@@ -12,10 +13,11 @@ import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
-import com.applidium.pierreferrand.d3library.helper.ArrayConverterHelper;
 import com.applidium.pierreferrand.d3library.helper.TextHelper;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
+import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 public class D3Axis<T> extends D3Drawable {
     private static final float DEFAULT_TICK_SIZE = 25F;
@@ -28,6 +30,8 @@ public class D3Axis<T> extends D3Drawable {
     private static final String DOMAIN_ERROR = "Domain should not be null";
     private static final String RANGE_ERROR = "Range should not be null";
     private static final String SCALE_ERROR = "Scale should not be null";
+    private static final String PREPARE_PARAMETERS_ERROR = "PrepareParameters should have been " +
+        "called";
 
     @NonNull private D3FloatFunction offsetX;
     @NonNull private D3FloatFunction offsetY;
@@ -41,6 +45,8 @@ public class D3Axis<T> extends D3Drawable {
     @Nullable private String[] ticks;
     @NonNull private Paint textPaint;
     @NonNull private LegendProperties legendProperties;
+
+    @Nullable ValueStorage<Bitmap> cachedDrawing;
 
     public D3Axis(@NonNull AxisOrientation orientation) {
         this.orientation = orientation;
@@ -123,6 +129,7 @@ public class D3Axis<T> extends D3Drawable {
                 domain[0] = converter.invert(converter.convert(domain[0]) - offset);
                 domain[1] = converter.invert(converter.convert(domain[1]) - offset);
                 scale.domain(domain);
+                updateNeeded();
             }
         };
     }
@@ -134,6 +141,7 @@ public class D3Axis<T> extends D3Drawable {
                 float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
                 resizeOnPinch(coordinateStaticY, coordinateMobileY, dY);
+                updateNeeded();
             }
         };
     }
@@ -209,6 +217,7 @@ public class D3Axis<T> extends D3Drawable {
                 domain[0] = converter.invert(converter.convert(domain[0]) - offset);
                 domain[1] = converter.invert(converter.convert(domain[1]) - offset);
                 scale.domain(domain);
+                updateNeeded();
             }
         };
     }
@@ -220,6 +229,7 @@ public class D3Axis<T> extends D3Drawable {
                 float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
                 resizeOnPinch(coordinateStaticX, coordinateMobileX, dX);
+                updateNeeded();
             }
         };
     }
@@ -607,10 +617,22 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
+    @Override public D3Axis<T> lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
+        return this;
+    }
+
     @Override public void draw(@NonNull Canvas canvas) {
-        drawLine(canvas);
-        drawTicks(canvas);
-        drawTicksLegend(canvas);
+        if (lazyRecomputing) {
+            if (cachedDrawing == null) {
+                throw new IllegalStateException(PREPARE_PARAMETERS_ERROR);
+            }
+            canvas.drawBitmap(cachedDrawing.getValue(), 0f, 0f, null);
+        } else {
+            drawLine(canvas);
+            drawTicks(canvas);
+            drawTicksLegend(canvas);
+        }
     }
 
     private void drawLine(@NonNull Canvas canvas) {
@@ -752,5 +774,25 @@ public class D3Axis<T> extends D3Drawable {
             default:
                 return 0F;
         }
+    }
+
+    @Override public void prepareParameters() {
+        if (!lazyRecomputing || calculationNeeded() == 0) {
+            return;
+        }
+        cachedDrawing = new ValueStorage<>();
+        cachedDrawing.setValue(
+            new ValueRunnable<Bitmap>() {
+                @Override protected void computeValue() {
+                    value = Bitmap.createBitmap(
+                        (int) width(), (int) height(), Bitmap.Config.ARGB_8888
+                    );
+                    Canvas temporaryCanvas = new Canvas(value);
+                    drawLine(temporaryCanvas);
+                    drawTicks(temporaryCanvas);
+                    drawTicksLegend(temporaryCanvas);
+                }
+            }
+        );
     }
 }
