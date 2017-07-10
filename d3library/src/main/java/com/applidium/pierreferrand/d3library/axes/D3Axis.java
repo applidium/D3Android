@@ -3,12 +3,12 @@ package com.applidium.pierreferrand.d3library.axes;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.support.annotation.ColorInt;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.helper.ArrayConverterHelper;
+import com.applidium.pierreferrand.d3library.helper.TextHelper;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
 
@@ -522,7 +522,7 @@ public class D3Axis<T> extends D3Drawable {
     }
 
     private float alignmentVerticalOffset(String legend) {
-        float height = getTextHeight(legend);
+        float height = TextHelper.getTextHeight(legend, textPaint);
         switch (legendProperties.verticalAlignement()) {
             case BOTTOM:
                 return height;
@@ -531,12 +531,6 @@ public class D3Axis<T> extends D3Drawable {
             default:
                 return 0.0f;
         }
-    }
-
-    private float getTextHeight(String legend) {
-        Rect bounds = new Rect();
-        textPaint.getTextBounds(legend, 0, legend.length(), bounds);
-        return (float) bounds.height();
     }
 
     private void drawHorizontalLegend(Canvas canvas) {
@@ -564,7 +558,7 @@ public class D3Axis<T> extends D3Drawable {
         coordinateX += legendProperties.offsetX();
         coordinateX -= alignmentHorizontalOffset(ticks[i]);
         coordinateY += orientation == AxisOrientation.TOP ? 0 :
-            getTextHeight(ticks[i]);
+            TextHelper.getTextHeight("" + ticks[i], textPaint);
 
         canvas.drawText(ticks[i], coordinateX, coordinateY, textPaint);
     }
