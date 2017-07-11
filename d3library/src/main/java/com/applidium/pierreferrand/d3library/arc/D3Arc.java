@@ -44,14 +44,52 @@ public class D3Arc<T> extends D3Drawable {
     @NonNull private D3FloatFunction offsetX;
     @NonNull private D3FloatFunction offsetY;
     @NonNull private D3FloatFunction startAngle;
-    @Nullable private ValueStorage<Angles> preComputedAngles;
-    @Nullable private ValueStorage<Bitmap> preComputedArc;
+    @NonNull private final ValueStorage<Angles> preComputedAngles;
+    @NonNull private final ValueStorage<Bitmap> preComputedArc;
 
     @Nullable private T[] data;
     @Nullable private D3DataMapperFunction<T> weights;
 
     @Nullable private String[] labels;
     @NonNull private Paint textPaint;
+
+    private final Object keyAngle = new Object();
+    private final ValueRunnable<Angles> anglesValueRunnable =
+        new ValueRunnable<Angles>() {
+            Angles value;
+
+            @Override public Angles getValue() {
+                return value;
+            }
+
+            @Override public void run() {
+                synchronized (keyAngle) {
+                    value = computeStartAngle();
+                    keyAngle.notifyAll();
+                }
+            }
+        };
+    private final Object keyBitmap = new Object();
+    private final ValueRunnable<Bitmap> bitmapValueRunnable =
+        new ValueRunnable<Bitmap>() {
+            Bitmap bitmap;
+
+            @Override public Bitmap getValue() {
+                return bitmap;
+            }
+
+            @Override public void run() {
+                synchronized (keyBitmap) {
+                    float computedOuterRadius = outerRadius();
+                    bitmap = Bitmap.createBitmap(
+                        (int) (2 * computedOuterRadius),
+                        (int) (2 * computedOuterRadius), Bitmap.Config.ARGB_8888
+                    );
+                    computeArcDrawing(computedOuterRadius, bitmap);
+                    keyBitmap.notifyAll();
+                }
+            }
+        };
 
     public D3Arc() {
         this(null);
@@ -78,6 +116,8 @@ public class D3Arc<T> extends D3Drawable {
         padAngle(DEFAULT_PAD_ANGLE);
         setupPaint();
         setupActions();
+        preComputedAngles = new ValueStorage<>();
+        preComputedArc = new ValueStorage<>();
     }
 
     @Override protected void setupPaint() {
@@ -495,46 +535,8 @@ public class D3Arc<T> extends D3Drawable {
         if (lazyRecomputing && calculationNeeded == 0) {
             return;
         }
-
-        final Object key = new Object();
-        preComputedAngles = new ValueStorage<>(
-            new ValueRunnable<Angles>() {
-                Angles value;
-
-                @Override public Angles getValue() {
-                    return value;
-                }
-
-                @Override public void run() {
-                    synchronized (key) {
-                        value = computeStartAngle();
-                        key.notifyAll();
-                    }
-                }
-            }, key
-        );
-        final Object keyBitmap = new Object();
-        preComputedArc = new ValueStorage<>(
-            new ValueRunnable<Bitmap>() {
-                Bitmap bitmap;
-
-                @Override public Bitmap getValue() {
-                    return bitmap;
-                }
-
-                @Override public void run() {
-                    synchronized (keyBitmap) {
-                        float computedOuterRadius = outerRadius();
-                        bitmap = Bitmap.createBitmap(
-                            (int) (2 * computedOuterRadius),
-                            (int) (2 * computedOuterRadius), Bitmap.Config.ARGB_8888
-                        );
-                        computeArcDrawing(computedOuterRadius, bitmap);
-                        keyBitmap.notifyAll();
-                    }
-                }
-            }, keyBitmap
-        );
+        preComputedAngles.setValue(anglesValueRunnable, keyAngle);
+        preComputedArc.setValue(bitmapValueRunnable, keyBitmap);
     }
 
     @Override public D3Arc<T> setClipRect(

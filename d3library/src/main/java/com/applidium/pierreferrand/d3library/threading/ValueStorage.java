@@ -2,7 +2,13 @@ package com.applidium.pierreferrand.d3library.threading;
 
 public class ValueStorage<T> {
     private T storedValue;
-    private Object synchronisationKey;
+    private final Object synchronisationKey;
+    private boolean initialized;
+
+    public ValueStorage() {
+        synchronisationKey = new Object();
+        initialized = false;
+    }
 
     public ValueStorage(ValueRunnable<T> runnable, Object key) {
         synchronisationKey = new Object();
@@ -10,6 +16,7 @@ public class ValueStorage<T> {
     }
 
     public void setValue(ValueRunnable<T> runnable, Object key) {
+        initialized = true;
         try {
             synchronized (key) {
                 ThreadPool.execute(runnable);
@@ -25,6 +32,9 @@ public class ValueStorage<T> {
     }
 
     public T getValue() {
+        if (!initialized) {
+            throw new IllegalStateException("Not initialized");
+        }
         try {
             while (storedValue == null) {
                 synchronized (synchronisationKey) {
