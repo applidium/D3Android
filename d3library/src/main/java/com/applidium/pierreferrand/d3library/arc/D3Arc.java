@@ -3,8 +3,6 @@ package com.applidium.pierreferrand.d3library.arc;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -437,31 +435,23 @@ public class D3Arc<T> extends D3Drawable {
             throw new IllegalStateException(ANGLES_ERROR);
         }
         float computedOuterRadius = outerRadius();
-        Bitmap bitmap = Bitmap.createBitmap(
-            (int) (2 * computedOuterRadius),
-            (int) (2 * computedOuterRadius), Bitmap.Config.ARGB_8888
-        );
-
-        Canvas c = new Canvas(bitmap);
         Angles computedAngles = preComputedAngles.getValue();
+        float diffRadius = outerRadius() - innerRadius();
+        paint.setStrokeWidth(diffRadius);
         for (int i = 0; i < data.length; i++) {
             paint.setColor(colors[i % colors.length]);
-            c.drawArc(
-                offsetX(),
-                offsetY(),
-                offsetX() + 2F * computedOuterRadius,
-                offsetY() + 2F * computedOuterRadius,
+            paint.setStyle(Paint.Style.FILL_AND_STROKE);
+            canvas.drawArc(
+                offsetX() + diffRadius / 2,
+                offsetY() + diffRadius / 2,
+                offsetX() + 2F * computedOuterRadius - diffRadius / 2,
+                offsetY() + 2F * computedOuterRadius - diffRadius / 2,
                 computedAngles.startAngles[i],
                 computedAngles.drawAngles[i],
-                true,
+                false,
                 paint
             );
         }
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        c.drawCircle(computedOuterRadius, computedOuterRadius, innerRadius(), paint);
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-
-        canvas.drawBitmap(bitmap, offsetX(), offsetY(), null);
     }
 
 
@@ -652,22 +642,22 @@ public class D3Arc<T> extends D3Drawable {
 
         Canvas c = new Canvas(bitmap);
         Angles computedAngles = preComputedAngles.getValue();
+        float diffRadius = computedOuterRadius - innerRadius();
+        paint.setStrokeWidth(diffRadius);
+        paint.setStyle(Paint.Style.FILL_AND_STROKE);
         for (int i = 0; i < data.length; i++) {
             paint.setColor(colors[i % colors.length]);
             c.drawArc(
-                0F,
-                0F,
-                2F * computedOuterRadius,
-                2F * computedOuterRadius,
+                diffRadius / 2,
+                diffRadius / 2,
+                2F * computedOuterRadius - diffRadius / 2,
+                2F * computedOuterRadius - diffRadius / 2,
                 computedAngles.startAngles[i],
                 computedAngles.drawAngles[i],
-                true,
+                false,
                 paint
             );
         }
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        c.drawCircle(computedOuterRadius, computedOuterRadius, innerRadius(), paint);
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
     }
 
     private static class Angles {
