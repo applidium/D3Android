@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.applidium.pierreferrand.d3library.action.Action;
@@ -18,13 +19,14 @@ import com.applidium.pierreferrand.d3library.threading.ThreadPool;
 import java.util.ArrayList;
 import java.util.List;
 
-public class D3View extends SurfaceView implements Runnable {
+public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callback {
     /**
      * Allows to have a proper click action, and to disable the transformation of a click action
      * into a scroll action when the user moves a little his finger.
      */
     private static final int DEFAULT_CLICK_ACTIONS_NUMBER = 3;
     private boolean mustRun = true;
+    private boolean initialized;
 
     private Object key = new Object();
 
@@ -47,7 +49,8 @@ public class D3View extends SurfaceView implements Runnable {
         drawables = new ArrayList<>();
         afterDrawActions = new ArrayList<>();
         handler = new Handler(Looper.getMainLooper());
-        launchDisplay();
+        initialized = false;
+        getHolder().addCallback(this);
     }
 
     private void launchDisplay() {
@@ -80,7 +83,9 @@ public class D3View extends SurfaceView implements Runnable {
      */
     public void onResume() {
         mustRun = true;
-        launchDisplay();
+        if (initialized) {
+            launchDisplay();
+        }
     }
 
     /**
@@ -281,5 +286,18 @@ public class D3View extends SurfaceView implements Runnable {
         for (D3Drawable drawable : drawables) {
             drawable.onScroll(direction, previousX, previousY, diffX, diffY);
         }
+    }
+
+    @Override public void surfaceCreated(SurfaceHolder holder) {
+        launchDisplay();
+        initialized = true;
+    }
+
+    @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+
+    }
+
+    @Override public void surfaceDestroyed(SurfaceHolder holder) {
+
     }
 }
