@@ -23,8 +23,8 @@ public class MainActivity extends Activity {
 
         D3View view = (D3View) findViewById(R.id.test);
 
-        final D3Axis<Float> horizontalAxis = new D3Axis(AxisOrientation.TOP);
-        final D3Axis<Float> verticalAxis = new D3Axis(AxisOrientation.LEFT);
+        final D3Axis<Float> horizontalAxis = new D3Axis<>(AxisOrientation.TOP);
+        final D3Axis<Float> verticalAxis = new D3Axis<>(AxisOrientation.LEFT);
 
         view.add(
             horizontalAxis

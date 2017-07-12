@@ -4,9 +4,14 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.action.PinchType;
+import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.helper.ArrayConverterHelper;
 import com.applidium.pierreferrand.d3library.helper.TextHelper;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
@@ -54,17 +59,132 @@ public class D3Axis<T> extends D3Drawable {
             });
         }
 
+        setupProperties();
+    }
+
+    private void setupProperties() {
         translate(DEFAULT_OFFSET, DEFAULT_OFFSET);
         this.legendProperties = new LegendProperties();
         setUpPaints();
+        setupDefaultActions();
+    }
+
+    private void setupDefaultActions() {
+        if (orientation == AxisOrientation.RIGHT || orientation == AxisOrientation.LEFT) {
+            onScrollAction(getHorizontalOnScrollAction());
+            onPinchAction(getHorizontalOnPinchAction());
+        } else {
+            onScrollAction(getVerticalOnScrollAction());
+            onPinchAction(getVerticalOnPinchAction());
+        }
+    }
+
+    @NonNull private OnScrollAction getHorizontalOnScrollAction() {
+        return new OnScrollAction() {
+            @Override public void onScroll(
+                ScrollDirection direction, float dX, float dY
+            ) {
+                if (direction != ScrollDirection.TOP && direction != ScrollDirection.BOTTOM) {
+                    return;
+                }
+                T[] domain = scale.domain();
+                Float[] range = scale.range();
+                float sign = dY < 0f ? 1f : -1f;
+                dY = Math.abs(dY);
+                D3Converter<T> converter = scale.converter();
+                converter.convert(domain[0]);
+                float offset = scale.converter().convert(domain[0])
+                    - converter.convert(scale.invert(range[0] + dY));
+                offset *= sign * 2;
+                domain[0] = converter.invert(converter.convert(domain[0]) - offset);
+                domain[1] = converter.invert(converter.convert(domain[1]) - offset);
+                scale.domain(domain);
+            }
+        };
+    }
+
+    @NonNull private OnPinchAction getHorizontalOnPinchAction() {
+        return new OnPinchAction() {
+            private static final float DEFAULT_RATIO = 0.985f;
+
+            @Override public void onPinch(
+                PinchType pinchType, float dX, float dY
+            ) {
+                if (pinchType != PinchType.VERTICAL_DECREASE && pinchType != PinchType
+                    .VERTICAL_INCREASE) {
+                    return;
+                }
+                float prop = DEFAULT_RATIO;
+                prop = pinchType == PinchType.VERTICAL_INCREASE ? prop : 1f / prop;
+                T[] domain = scale.domain();
+                D3Converter<T> converter = scale.converter();
+                float middle = (converter.convert(domain[1]) + converter.convert(domain[0]))
+                    / 2f;
+                domain[0] = converter.invert(middle - (converter.convert(domain[1])
+                    - middle) * prop);
+                domain[1] = converter.invert(middle + (middle
+                    - converter.convert(domain[0])) * prop);
+                scale.domain(domain);
+            }
+        };
+    }
+
+    @NonNull private OnScrollAction getVerticalOnScrollAction() {
+        return new OnScrollAction() {
+            @Override public void onScroll(
+                ScrollDirection direction, float dX, float dY
+            ) {
+                if (direction != ScrollDirection.RIGHT && direction != ScrollDirection.LEFT) {
+                    return;
+                }
+                D3Converter<T> converter = scale.converter();
+                T[] domain = scale.domain();
+                Float[] range = scale.range();
+                float sign = dX < 0f ? 1f : -1f;
+                dX = Math.abs(dX);
+                float offset = converter.convert(domain[0])
+                    - converter.convert(scale.invert(range[0] + dX));
+                offset *= sign * 2;
+                domain[0] = converter.invert(converter.convert(domain[0]) - offset);
+                domain[1] = converter.invert(converter.convert(domain[1]) - offset);
+                scale.domain(domain);
+            }
+        };
+    }
+
+    @NonNull private OnPinchAction getVerticalOnPinchAction() {
+        return new OnPinchAction() {
+            private static final float DEFAULT_RATIO = 0.985f;
+
+            @Override public void onPinch(
+                PinchType pinchType, float dX, float dY
+            ) {
+                if (pinchType != PinchType.HORIZONTAL_DECREASE && pinchType != PinchType
+                    .HORIZONTAL_INCREASE) {
+                    return;
+                }
+                D3Converter<T> converter = scale.converter();
+                float prop = DEFAULT_RATIO;
+                prop = pinchType == PinchType.HORIZONTAL_INCREASE ? prop : 1f / prop;
+                T[] domain = scale.domain();
+
+                float middle = (converter.convert(domain[1]) + converter.convert(domain[0]))
+                    / 2f;
+                domain[0] = converter.invert(
+                    middle - (converter.convert(domain[1]) - middle) * prop
+                );
+                domain[1] = converter.invert(
+                    middle + (middle - converter.convert(domain[0])) * prop
+                );
+                scale.domain(domain);
+            }
+        };
     }
 
     public D3Axis(AxisOrientation orientation, D3Scale scale) {
         this.orientation = orientation;
         this.scale = scale;
-        translate(DEFAULT_OFFSET, DEFAULT_OFFSET);
-        this.legendProperties = new LegendProperties();
-        setUpPaints();
+        setupProperties();
     }
 
     private void setUpPaints() {
