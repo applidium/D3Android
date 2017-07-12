@@ -12,12 +12,12 @@ public class D3Line<T> extends D3Drawable {
 
     private static final float DEFAULT_STROKE_WIDTH = 5.0f;
 
-    private T[] data;
+    protected T[] data;
     private D3DataMapperFunction<T> x;
     private D3DataMapperFunction<T> y;
 
-    private Paint paint;
-    private Interpolator interpolator;
+    protected Paint paint;
+    protected Interpolator interpolator;
 
     public D3Line() {
         this(null);
@@ -93,6 +93,11 @@ public class D3Line<T> extends D3Drawable {
             new float[]{y[index], y[index + 1]}
         );
         return yValue;
+    }
+
+    public D3Line<T> paint(Paint paint) {
+        this.paint = paint;
+        return this;
     }
 
     @Override public void draw(Canvas canvas) {
