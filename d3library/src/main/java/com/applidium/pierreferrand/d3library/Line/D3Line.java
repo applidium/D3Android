@@ -5,6 +5,8 @@ import android.graphics.Color;
 import android.graphics.Paint;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
+import com.applidium.pierreferrand.d3library.scale.Interpolator;
+import com.applidium.pierreferrand.d3library.scale.LinearInterpolator;
 
 public class D3Line<T> extends D3Drawable {
 
@@ -15,6 +17,7 @@ public class D3Line<T> extends D3Drawable {
     private D3DataMapperFunction<T> y;
 
     private Paint paint;
+    private Interpolator interpolator;
 
     public D3Line() {
         this(null);
@@ -22,6 +25,7 @@ public class D3Line<T> extends D3Drawable {
 
     public D3Line(T[] data) {
         this.data = data.clone();
+        interpolator = new LinearInterpolator();
         setupPaint();
     }
 
@@ -65,6 +69,30 @@ public class D3Line<T> extends D3Drawable {
     public D3Line<T> data(T[] data) {
         this.data = data.clone();
         return this;
+    }
+
+    public Interpolator interpolator() {
+        return interpolator;
+    }
+
+    public D3Line<T> interpolator(Interpolator interpolator) {
+        this.interpolator = interpolator;
+        return this;
+    }
+
+    public float interpolateValue(float measuredX) {
+        float[] x = this.x();
+        float[] y = this.y();
+        int index = 0;
+        while (index < y.length - 2 && x[index + 1] < measuredX) {
+            index++;
+        }
+        float yValue = interpolator.interpolate(
+            measuredX,
+            new float[]{x[index], x[index + 1]},
+            new float[]{y[index], y[index + 1]}
+        );
+        return yValue;
     }
 
     @Override public void draw(Canvas canvas) {
