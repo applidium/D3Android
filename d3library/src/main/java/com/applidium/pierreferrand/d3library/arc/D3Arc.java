@@ -12,7 +12,6 @@ import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.helper.ColorHelper;
-import com.applidium.pierreferrand.d3library.helper.TextHelper;
 import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
@@ -38,15 +37,17 @@ public class D3Arc<T> extends D3Drawable {
     @NonNull D3FloatFunction startAngle;
     @NonNull final ValueStorage<Angles> preComputedAngles;
     @NonNull private final ValueStorage<Bitmap> preComputedArc;
+    @NonNull private final ValueStorage<LabelsCoordinates> preComputedLabels;
 
     @Nullable T[] data;
     @Nullable private D3DataMapperFunction<T> weights;
     private float[] weightArray;
 
-    @Nullable private String[] labels;
+    @Nullable String[] labels;
     @NonNull private Paint textPaint;
 
     @NonNull private final BitmapValueRunnable<T> bitmapValueRunnable;
+    @NonNull private final LabelsValueRunnable<T> labelsValueRunnable;
     @NonNull private final AnglesValueRunnable<T> anglesValueRunnable;
 
     public D3Arc() {
@@ -58,7 +59,9 @@ public class D3Arc<T> extends D3Drawable {
         setupActions();
         preComputedAngles = new ValueStorage<>();
         preComputedArc = new ValueStorage<>();
+        preComputedLabels = new ValueStorage<>();
         bitmapValueRunnable = new BitmapValueRunnable<>(this);
+        labelsValueRunnable = new LabelsValueRunnable<>(this, new Object(), textPaint);
         anglesValueRunnable = new AnglesValueRunnable<>(this, new Object());
 
         if (data != null) {
@@ -167,6 +170,7 @@ public class D3Arc<T> extends D3Drawable {
     public D3Arc<T> data(@NonNull T[] data) {
         weightArray = new float[data.length];
         anglesValueRunnable.setDataLenght(data.length);
+        labelsValueRunnable.setDataLength(data.length);
         this.data = data.clone();
         return this;
     }
@@ -429,32 +433,17 @@ public class D3Arc<T> extends D3Drawable {
         if (labels == null) {
             return;
         }
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
 
-        Angles computedAngles = preComputedAngles.getValue();
-
-        float radius = (outerRadius() + innerRadius()) / 2F;
-        float realOffsetX = offsetX() + outerRadius();
-        float realOffsetY = offsetY() + outerRadius();
-        float currentAngle;
-        float nextAngle;
-        float radianAngle;
-        float coordinateX;
-        float coordinateY;
+        float offsetX = offsetX();
+        float offsetY = offsetY();
+        float[] coordinatesX = labelsValueRunnable.getValue().coordinatesX;
+        float[] coordinatesY = labelsValueRunnable.getValue().coordinatesY;
 
         for (int i = 0; i < data.length; i++) {
             textPaint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
-            currentAngle = computedAngles.startAngles[i];
-            nextAngle = currentAngle + computedAngles.drawAngles[i];
-            radianAngle = (float) Math.toRadians(-(nextAngle + currentAngle) / 2F);
-
-            coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
-            coordinateX -= textPaint.measureText(labels[i]) / 2F;
-            coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
-            coordinateY += TextHelper.getTextHeight(labels[i], textPaint) / 2F;
-            canvas.drawText(labels[i], coordinateX, coordinateY, textPaint);
+            canvas.drawText(
+                labels[i], coordinatesX[i] + offsetX, coordinatesY[i] + offsetY, textPaint
+            );
         }
     }
 
@@ -464,6 +453,7 @@ public class D3Arc<T> extends D3Drawable {
         }
         preComputedAngles.setValue(anglesValueRunnable, anglesValueRunnable.getKey());
         preComputedArc.setValue(bitmapValueRunnable, bitmapValueRunnable.getKey());
+        preComputedLabels.setValue(labelsValueRunnable, labelsValueRunnable.getKey());
     }
 
     @Override public D3Arc<T> setClipRect(
