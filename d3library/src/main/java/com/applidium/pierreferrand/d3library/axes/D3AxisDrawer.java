@@ -2,29 +2,39 @@ package com.applidium.pierreferrand.d3library.axes;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.Path;
 import android.support.annotation.NonNull;
 
 import com.applidium.pierreferrand.d3library.helper.TextHelper;
 
 final class D3AxisDrawer<T> {
+    @NonNull private final Path path;
     private final D3Axis<T> axis;
     private Paint paint;
 
     D3AxisDrawer(D3Axis<T> axis) {
         this.axis = axis;
+        path = new Path();
     }
 
     void setPaint(Paint paint) {
         this.paint = paint;
+        paint.setStyle(Paint.Style.STROKE);
     }
 
     void draw(@NonNull Canvas canvas) {
-        drawLine(canvas);
-        drawTicks(canvas);
+        initPath();
+        computeLine();
+        drawTicks();
+        drawPath(canvas);
         drawTicksLegend(canvas);
     }
 
-    private void drawLine(@NonNull Canvas canvas) {
+    private void initPath() {
+        path.rewind();
+    }
+
+    private void computeLine() {
         float startX;
         float startY;
         float endX;
@@ -42,42 +52,50 @@ final class D3AxisDrawer<T> {
             endX = computedOffsetX;
             endY = computedOffsetY + axis.lastBoundRange();
         }
-
-        canvas.drawLine(startX, startY, endX, endY, paint);
+        path.moveTo(startX, startY);
+        path.lineTo(endX, endY);
     }
 
-    private void drawTicks(@NonNull Canvas canvas) {
+    private void drawTicks() {
         if (axis.orientation == AxisOrientation.TOP || axis.orientation == AxisOrientation.BOTTOM) {
-            drawVerticalTicks(canvas);
+            drawVerticalTicks();
         } else {
-            drawHorizontalTicks(canvas);
+            drawHorizontalTicks();
         }
     }
 
-    private void drawHorizontalTicks(@NonNull Canvas canvas) {
+    private void drawHorizontalTicks() {
         float computedOffsetX = axis.offsetX.getFloat();
         float computedOffsetY = axis.offsetY.getFloat();
         float outerX = computedOffsetX - axis.outerTickSize / 2;
         float innerX = computedOffsetX + axis.innerTickSize / 2;
+        float coordinateY;
         for (int i = 0; i < axis.ticksNumber; i++) {
-            float coordinateY = computedOffsetY
+            coordinateY = computedOffsetY
                 + axis.lastBoundRange() * i / (axis.ticksNumber - 1F)
                 + axis.firstBoundRange() * (axis.ticksNumber - i - 1F) / (axis.ticksNumber - 1F);
-            canvas.drawLine(outerX, coordinateY, innerX, coordinateY, paint);
+            path.moveTo(outerX, coordinateY);
+            path.lineTo(innerX, coordinateY);
         }
     }
 
-    private void drawVerticalTicks(@NonNull Canvas canvas) {
+    private void drawVerticalTicks() {
         float computedOffsetX = axis.offsetX.getFloat();
         float computedOffsetY = axis.offsetY.getFloat();
         float outerY = computedOffsetY + axis.outerTickSize / 2;
         float innerY = computedOffsetY - axis.innerTickSize / 2;
+        float coordinateX;
         for (int i = 0; i < axis.ticksNumber; i++) {
-            float coordinateX = computedOffsetX
+            coordinateX = computedOffsetX
                 + axis.lastBoundRange() * i / (axis.ticksNumber - 1F)
                 + axis.firstBoundRange() * (axis.ticksNumber - i - 1F) / (axis.ticksNumber - 1F);
-            canvas.drawLine(coordinateX, innerY, coordinateX, outerY, paint);
+            path.moveTo(coordinateX, innerY);
+            path.lineTo(coordinateX, outerY);
         }
+    }
+
+    private void drawPath(Canvas canvas) {
+        canvas.drawPath(path, paint);
     }
 
     private void drawTicksLegend(@NonNull Canvas canvas) {

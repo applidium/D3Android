@@ -30,7 +30,7 @@ import com.applidium.pierreferrand.d3library.scale.D3Scale;
     @NonNull D3FloatFunction offsetY;
     float innerTickSize = DEFAULT_TICK_SIZE;
     float outerTickSize = DEFAULT_TICK_SIZE;
-    int ticksNumber = DEFAULT_TICK_NUMBER;
+    int ticksNumber;
 
     @NonNull final AxisOrientation orientation;
     @NonNull D3Scale<T> scale;
@@ -66,6 +66,7 @@ import com.applidium.pierreferrand.d3library.scale.D3Scale;
 
     private void setupProperties() {
         translate(DEFAULT_OFFSET, DEFAULT_OFFSET);
+        ticks(DEFAULT_TICK_NUMBER);
         this.legendProperties = new LegendProperties();
         setupPaint();
         setupDefaultActions();
