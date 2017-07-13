@@ -1,4 +1,4 @@
-package com.applidium.pierreferrand.d3library.Line;
+package com.applidium.pierreferrand.d3library.line;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;

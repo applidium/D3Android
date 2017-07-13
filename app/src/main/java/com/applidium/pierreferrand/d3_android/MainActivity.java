@@ -6,8 +6,8 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3View;
-import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
-import com.applidium.pierreferrand.d3library.Line.D3Line;
+import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.line.D3Line;
 import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
 import com.applidium.pierreferrand.d3library.axes.D3Axis;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;

@@ -6,8 +6,8 @@ import android.graphics.Path;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
-import com.applidium.pierreferrand.d3library.Line.D3Line;
+import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.line.D3Line;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;

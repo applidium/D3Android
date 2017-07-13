@@ -1,4 +1,4 @@
-package com.applidium.pierreferrand.d3library.Line;
+package com.applidium.pierreferrand.d3library.line;
 
 /**
  * Maps a float value to each value of an array.
