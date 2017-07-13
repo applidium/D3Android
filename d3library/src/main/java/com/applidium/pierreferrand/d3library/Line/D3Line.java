@@ -9,6 +9,8 @@ import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.action.PinchType;
+import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.scale.LinearInterpolator;
@@ -47,6 +49,25 @@ public class D3Line<T> extends D3Drawable {
         interpolator = new LinearInterpolator();
         onClickAction(null);
         setupPaint();
+        setupActions();
+    }
+
+    private void setupActions() {
+        onScrollAction(new OnScrollAction() {
+            @Override public void onScroll(
+                ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
+            ) {
+                updateNeeded();
+            }
+        });
+        onPinchAction(new OnPinchAction() {
+            @Override public void onPinch(
+                PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
+                float coordinateMobileX, float coordinateMobileY, float dX, float dY
+            ) {
+                updateNeeded();
+            }
+        });
     }
 
     /**
