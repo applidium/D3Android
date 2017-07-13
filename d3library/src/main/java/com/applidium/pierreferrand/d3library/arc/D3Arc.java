@@ -14,11 +14,14 @@ import com.applidium.pierreferrand.d3library.helper.TextHelper;
 
 public class D3Arc<T> extends D3Drawable {
     private static float DEFAULT_LABEL_TEXT_SIZE = 25f;
+    private static float DEFAULT_PAD_ANGLE = 1f;
 
     private int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
 
     private D3FloatFunction outerRadius;
     private D3FloatFunction innerRadius;
+
+    private float padAngle;
 
     private D3FloatFunction offsetX;
     private D3FloatFunction offsetY;
@@ -48,6 +51,7 @@ public class D3Arc<T> extends D3Drawable {
         });
         offsetX(0f);
         offsetY(0f);
+        padAngle(DEFAULT_PAD_ANGLE);
     }
 
     public float innerRadius() {
@@ -87,7 +91,7 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     public T[] data() {
-        return data;
+        return data.clone();
     }
 
     public D3Arc<T> data(T[] data) {
@@ -198,6 +202,15 @@ public class D3Arc<T> extends D3Drawable {
         return this;
     }
 
+    public float padAngle() {
+        return padAngle;
+    }
+
+    public D3Arc<T> padAngle(float padAngle) {
+        this.padAngle = padAngle;
+        return this;
+    }
+
     public Object dataFromPosition(float x, float y) {
         float xCenter = offsetX() + outerRadius();
         float yCenter = offsetY() + outerRadius();
@@ -205,8 +218,8 @@ public class D3Arc<T> extends D3Drawable {
         float diffX = (x - xCenter);
         float diffY = (y - yCenter);
 
-        float radius2 = diffX * diffX + diffY * diffY;
-        if (radius2 < innerRadius() * innerRadius() || radius2 > outerRadius() * outerRadius()) {
+        float radius = (float) Math.hypot(diffX, diffY);
+        if (radius < innerRadius() || radius > outerRadius()) {
             return null;
         }
 
@@ -236,7 +249,7 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     @Override public void draw(Canvas canvas) {
-        float[] weights = this.weights();
+        float[] weights = weights();
         float totalWeight = 0f;
 
         for (int i = 0; i < data.length; i++) {
@@ -252,7 +265,7 @@ public class D3Arc<T> extends D3Drawable {
 
     private void drawPie(Canvas canvas, float[] weights, float totalWeight) {
         float outerRadius = outerRadius();
-        float currentAngle = 0f;
+        float currentAngle = -padAngle / 2f;
 
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setStyle(Paint.Style.FILL);
@@ -263,17 +276,18 @@ public class D3Arc<T> extends D3Drawable {
         Canvas c = new Canvas(bitmap);
         for (int i = 0; i < data.length; i++) {
             paint.setColor(colors[i % colors.length]);
+            float drawAngle = (360f - weights.length * padAngle) * weights[i] / totalWeight;
             c.drawArc(
                 0f,
                 0f,
                 2f * outerRadius,
                 2f * outerRadius,
-                0f,
-                360f - currentAngle,
+                currentAngle,
+                -drawAngle,
                 true,
                 paint
             );
-            currentAngle += 360.0f * weights[i] / totalWeight;
+            currentAngle -= drawAngle + padAngle;
         }
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         c.drawCircle(outerRadius, outerRadius, innerRadius(), paint);
@@ -299,7 +313,7 @@ public class D3Arc<T> extends D3Drawable {
         for (int i = 0; i < data.length; i++) {
             paint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
             float nextAngle = currentAngle + 360.0f * weights[i] / totalWeight;
-            float radianAngle = (nextAngle + currentAngle) / 360f * (float) Math.PI;
+            float radianAngle = (float) Math.toRadians((nextAngle + currentAngle) / 2f);
             float coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
             coordinateX -= paint.measureText(labels[i]) / 2f;
             float coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);

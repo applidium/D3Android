@@ -2,13 +2,18 @@ package com.applidium.pierreferrand.d3library.curve;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.support.annotation.NonNull;
 
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.Line.D3Line;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
+import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 public class D3Curve<T> extends D3Line<T> {
     private static final int DEFAULT_POINT_NUMBER = 100;
+    ValueStorage<float[]> ticksX;
+    ValueStorage<float[]> ticksY;
 
     private int pointsNumber = DEFAULT_POINT_NUMBER;
 
@@ -19,35 +24,38 @@ public class D3Curve<T> extends D3Line<T> {
 
     private void initInterpolator() {
         interpolator = new Interpolator() {
+            private int[] indexToUse;
+
             @Override
             public float interpolate(
                 float x,
                 float[] xData,
                 float[] yData
             ) {
-                int[] indexToUse = chooseIndexes(yData);
+                if (indexToUse == null || indexToUse.length != yData.length) {
+                    initIndex(yData.length);
+                }
+
                 return computeResult(x, xData, yData, indexToUse);
             }
-        };
-    }
 
-    private int[] chooseIndexes(float[] yData) {
-        int[] indexToUse;
-        if (yData.length <= 5) {
-            indexToUse = new int[yData.length];
-            for (int i = 0; i < indexToUse.length; i++) {
-                indexToUse[i] = i;
+            private void initIndex(int indexSize) {
+                if (indexSize <= 5) {
+                    indexToUse = new int[indexSize];
+                    for (int i = 0; i < indexToUse.length; i++) {
+                        indexToUse[i] = i;
+                    }
+                } else {
+                    indexToUse = new int[]{
+                        0,
+                        (indexSize - 1) / 4,
+                        (indexSize - 1) * 2 / 4,
+                        (indexSize - 1) * 3 / 4,
+                        (indexSize - 1)
+                    };
+                }
             }
-        } else {
-            indexToUse = new int[]{
-                0,
-                (yData.length - 1) / 4,
-                (yData.length - 1) * 2 / 4,
-                (yData.length - 1) * 3 / 4,
-                (yData.length - 1)
-            };
-        }
-        return indexToUse;
+        };
     }
 
     private float computeResult(
@@ -113,39 +121,80 @@ public class D3Curve<T> extends D3Line<T> {
         if (data.length < 2) {
             return;
         }
-        float[] xData = x();
-        float[] yData = y();
 
-        float[] xDraw = new float[pointsNumber];
-        float[] yDraw = new float[pointsNumber];
-
-        xDraw[0] = xData[0];
-        yDraw[0] = interpolator.interpolate(xDraw[0], xData, yData);
-
-        for (int i = 1; i < pointsNumber - 1; i++) {
-            xDraw[i] = ((pointsNumber - 1 - i) * xData[0] + i * xData[xData.length - 1]) /
-                pointsNumber;
-            yDraw[i] = interpolator.interpolate(xDraw[i], xData, yData);
-        }
-
-        xDraw[pointsNumber - 1] = xData[yData.length - 1];
-        yDraw[pointsNumber - 1] = interpolator.interpolate(xDraw[pointsNumber - 1], xData, yData);
-
-
-        float prevX;
-        float prevY;
-
-        float nextX = xDraw[0];
-        float nextY = yDraw[0];
+        float[] xDraw = ticksX.getValue();
+        float[] yDraw = ticksY.getValue();
 
         for (int i = 1; i < yDraw.length; i++) {
-            prevX = nextX;
-            prevY = nextY;
-
-            nextX = xDraw[i];
-            nextY = yDraw[i];
-
-            canvas.drawLine(prevX, prevY, nextX, nextY, paint);
+            canvas.drawLine(xDraw[i - 1], yDraw[i - 1], xDraw[i], yDraw[i], paint);
         }
+    }
+
+    @Override public void prepareParameters() {
+        super.prepareParameters();
+        final Object keyX = new Object();
+        final Object keyY = new Object();
+        ticksX = new ValueStorage<>(getTicksXRunnable(keyX), keyX);
+        ticksY = new ValueStorage<>(getTicksYRunnable(keyY), keyY);
+    }
+
+    @NonNull private ValueRunnable<float[]> getTicksXRunnable(final Object keyX) {
+        return new ValueRunnable<float[]>() {
+            float[] value;
+
+            @Override public float[] getValue() {
+                return value;
+            }
+
+            @Override public void run() {
+                synchronized (keyX) {
+                    float[] xData = x();
+                    float[] xDraw = new float[pointsNumber];
+                    xDraw[0] = xData[0];
+                    for (int i = 1; i < pointsNumber - 1; i++) {
+                        xDraw[i] = ((pointsNumber - 1 - i) * xData[0] + i * xData[xData
+                            .length - 1]) /
+                            pointsNumber;
+                    }
+                    xDraw[pointsNumber - 1] = xData[xData.length - 1];
+                    value = xDraw;
+                    keyX.notify();
+                }
+            }
+        };
+    }
+
+    @NonNull private ValueRunnable<float[]> getTicksYRunnable(final Object keyY) {
+        return new ValueRunnable<float[]>() {
+            float[] value;
+
+            @Override public float[] getValue() {
+                return value;
+            }
+
+            @Override public void run() {
+                synchronized (keyY) {
+                    float[] xData = x();
+                    float[] yData = y();
+
+                    float[] xDraw = ticksX.getValue();
+                    float[] yDraw = new float[pointsNumber];
+
+                    yDraw[0] = interpolator.interpolate(xDraw[0], xData, yData);
+
+                    for (int i = 1; i < pointsNumber - 1; i++) {
+                        yDraw[i] = interpolator.interpolate(xDraw[i], xData, yData);
+                    }
+
+                    yDraw[pointsNumber - 1] = interpolator.interpolate(
+                        xDraw[pointsNumber - 1],
+                        xData,
+                        yData
+                    );
+                    value = yDraw;
+                    keyY.notify();
+                }
+            }
+        };
     }
 }

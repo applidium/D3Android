@@ -6,16 +6,15 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 import android.widget.TextView;
 
-import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.D3View;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.Line.D3Line;
+import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
 import com.applidium.pierreferrand.d3library.axes.D3Axis;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
-import com.applidium.pierreferrand.d3library.curve.D3Curve;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
-
 import net.danlew.android.joda.JodaTimeAndroid;
 
 import org.joda.time.DateTime;
@@ -27,9 +26,9 @@ public class MainActivity extends Activity {
     TextView lightValue;
     D3Axis<Float> leftAxis;
     D3Axis<Float> rightAxis;
-    D3Axis<DateTime> timeAxis;
-    D3Curve<LightData> lightCurve;
-    D3Curve<TemperatureData> temperatureCurve;
+    D3Axis<Float> timeAxis;
+    D3Line<LightData> lightCurve;
+    D3Line<TemperatureData> temperatureCurve;
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -88,23 +87,19 @@ public class MainActivity extends Activity {
                 });
 
         timeAxis =
-            new D3Axis<DateTime>(AxisOrientation.TOP)
-                .domain(new DateTime[]{
-                    new DateTime().withHourOfDay(11).withMinuteOfHour(17).withSecondOfMinute(1),
-                    new DateTime().withHourOfDay(11).withMinuteOfHour(17).withSecondOfMinute(14),
+            new D3Axis<Float>(AxisOrientation.TOP)
+                .domain(new Float[]{1f, 14f,})
+                .range(new D3RangeFunction<Float>() {
+                    @Override public Float[] getRange() {
+                        return new Float[]{0.05f * view.getWidth(), 0.95f * view.getWidth()};
                     }
-                ).range(new D3RangeFunction<Float>() {
-                @Override public Float[] getRange() {
-                    return new Float[]{0.05f * view.getWidth(), 0.95f * view.getWidth()};
-                }
-            }).converter(new D3Converter<DateTime>() {
-                @Override public float convert(DateTime toConvert) {
-                    return (float) (toConvert.getMillis() - 1491470254080L);
+                }).converter(new D3Converter<Float>() {
+                @Override public float convert(Float toConvert) {
+                    return toConvert;
                 }
 
-                @Override public DateTime invert(float toInvert) {
-
-                    return new DateTime().withMillis((long) toInvert + 1491470254080L);
+                @Override public Float invert(float toInvert) {
+                    return toInvert;
                 }
             }).offsetY(new D3FloatFunction() {
                 @Override public float getFloat() {
@@ -116,17 +111,10 @@ public class MainActivity extends Activity {
         lightPaint.setColor(0XFF00F0F0);
         lightPaint.setStrokeWidth(12f);
 
-        LightData[] lightData = new LightData[]{
-            new LightData(1, 70f),
-            new LightData(2, 510f),
-            new LightData(4, 434f),
-            new LightData(5, 431f),
-            new LightData(7, 428f),
-            new LightData(8, 457f),
-            new LightData(10, 210f),
-            new LightData(11, 100f),
-            new LightData(14, 100f)
-        };
+        LightData[] lightData = new LightData[500];
+        for (int i = 0; i < lightData.length; i++) {
+            lightData[i] = new LightData(i, (float) Math.random() * 400f + 125f);
+        }
         TemperatureData[] temperatureData =
             new TemperatureData[]{
                 new TemperatureData(1, 24.2f),
@@ -141,11 +129,11 @@ public class MainActivity extends Activity {
             };
 
         lightCurve =
-            new D3Curve<>(lightData)
+            new D3Line<>(lightData)
                 .x(new D3DataMapperFunction<LightData>() {
                     @Override
                     public float compute(LightData object, int position, LightData[] data) {
-                        return timeAxis.scale().value(object.date);
+                        return timeAxis.scale().value(object.test);
                     }
                 })
                 .y(new D3DataMapperFunction<LightData>() {
@@ -161,7 +149,7 @@ public class MainActivity extends Activity {
 
 
         temperatureCurve =
-            new D3Curve<>(temperatureData)
+            new D3Line<>(temperatureData)
                 .x(new D3DataMapperFunction<TemperatureData>() {
                     @Override
                     public float compute(
@@ -169,7 +157,7 @@ public class MainActivity extends Activity {
                         int position,
                         TemperatureData[] data
                     ) {
-                        return timeAxis.scale().value(object.date);
+                        return timeAxis.scale().value(object.test);
                     }
                 })
                 .y(new D3DataMapperFunction<TemperatureData>() {
@@ -220,9 +208,14 @@ public class MainActivity extends Activity {
     private class LightData {
         DateTime date;
         Float value;
+        float test;
 
         LightData(int sec, float value) {
-            date = new DateTime().withHourOfDay(11).withMinuteOfHour(17).withSecondOfMinute(sec);
+            date = new DateTime()
+                .withHourOfDay(11)
+                .withMinuteOfHour(17 + sec / 60)
+                .withSecondOfMinute(sec % 60);
+            test = sec;
             this.value = value;
         }
     }
@@ -230,10 +223,22 @@ public class MainActivity extends Activity {
     private class TemperatureData {
         DateTime date;
         Float value;
+        float test;
 
         TemperatureData(int sec, float value) {
             date = new DateTime().withHourOfDay(11).withMinuteOfHour(17).withSecondOfMinute(sec);
+            test = sec;
             this.value = value;
         }
+    }
+
+    @Override protected void onPause() {
+        super.onPause();
+        view.onPause();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        view.onResume();
     }
 }
