@@ -28,6 +28,7 @@ public class D3Line<T> extends D3Drawable {
     @NonNull private final CoordinatesValueStorage<T> xValueStorage;
     @NonNull private final ValueStorage<float[]> storeY;
     @NonNull private final CoordinatesValueStorage<T> yValueStorage;
+    @NonNull private float[] lines;
 
     @Nullable protected T[] data;
     @Nullable private D3DataMapperFunction<T> x;
@@ -45,7 +46,7 @@ public class D3Line<T> extends D3Drawable {
         xValueStorage = new CoordinatesValueStorage<>(this);
         yValueStorage = new CoordinatesValueStorage<>(this);
 
-        data(data != null ? data.clone() : null);
+        data(data);
         interpolator = new LinearInterpolator();
         onClickAction(null);
         setupPaint();
@@ -118,10 +119,18 @@ public class D3Line<T> extends D3Drawable {
     /**
      * Sets the data used by the Line.
      */
-    public D3Line<T> data(@NonNull T[] data) {
+    public D3Line<T> data(@Nullable T[] data) {
+        if (data == null) {
+            this.data = null;
+            xValueStorage.setDataLength(0);
+            yValueStorage.setDataLength(0);
+            lines = new float[0];
+            return this;
+        }
         xValueStorage.setDataLength(data.length);
         yValueStorage.setDataLength(data.length);
-        this.data = data.clone();
+        lines = new float[4 * (data.length - 1)];
+        this.data = data;
         return this;
     }
 
@@ -169,13 +178,15 @@ public class D3Line<T> extends D3Drawable {
         if (data.length < 2) {
             return;
         }
-
         float[] computedX = storeX.getValue();
         float[] computedY = storeY.getValue();
-
-        for (int i = 1; i < data.length; i++) {
-            canvas.drawLine(computedX[i - 1], computedY[i - 1], computedX[i], computedY[i], paint);
+        for (int i = 0; i < data.length - 1; i++) {
+            lines[i * 4] = computedX[i];
+            lines[i * 4 + 1] = computedY[i];
+            lines[i * 4 + 2] = computedX[i + 1];
+            lines[i * 4 + 3] = computedY[i + 1];
         }
+        canvas.drawLines(lines, paint);
     }
 
     @Override public void prepareParameters() {
