@@ -1,6 +1,5 @@
 package com.applidium.pierreferrand.d3library.axes;
 
-import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
@@ -11,15 +10,10 @@ import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
-import com.applidium.pierreferrand.d3library.action.PinchType;
-import com.applidium.pierreferrand.d3library.action.ScrollDirection;
-import com.applidium.pierreferrand.d3library.helper.TextHelper;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
-import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
-import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
-public class D3Axis<T> extends D3Drawable {
+@SuppressWarnings({"WeakerAccess", "unused"}) public class D3Axis<T> extends D3Drawable {
     private static final float DEFAULT_TICK_SIZE = 25F;
     private static final float DEFAULT_OFFSET = 0F;
     private static final int DEFAULT_TICK_NUMBER = 5;
@@ -29,24 +23,21 @@ public class D3Axis<T> extends D3Drawable {
     private static final String CONVERTER_ERROR = "Converter should not be null";
     private static final String DOMAIN_ERROR = "Domain should not be null";
     private static final String RANGE_ERROR = "Range should not be null";
-    private static final String SCALE_ERROR = "Scale should not be null";
-    private static final String PREPARE_PARAMETERS_ERROR = "PrepareParameters should have been " +
-        "called";
 
-    @NonNull private D3FloatFunction offsetX;
-    @NonNull private D3FloatFunction offsetY;
-    private float innerTickSize = DEFAULT_TICK_SIZE;
-    private float outerTickSize = DEFAULT_TICK_SIZE;
-    private int ticksNumber = DEFAULT_TICK_NUMBER;
+    @NonNull private final D3AxisDrawer<T> drawer = new D3AxisDrawer<>(this);
 
-    @NonNull private final AxisOrientation orientation;
-    @NonNull private D3Scale<T> scale;
+    @NonNull D3FloatFunction offsetX;
+    @NonNull D3FloatFunction offsetY;
+    float innerTickSize = DEFAULT_TICK_SIZE;
+    float outerTickSize = DEFAULT_TICK_SIZE;
+    int ticksNumber = DEFAULT_TICK_NUMBER;
 
-    @Nullable private String[] ticks;
-    @NonNull private Paint textPaint;
-    @NonNull private LegendProperties legendProperties;
+    @NonNull final AxisOrientation orientation;
+    @NonNull D3Scale<T> scale;
 
-    @Nullable ValueStorage<Bitmap> cachedDrawing;
+    @Nullable String[] ticks;
+    @NonNull Paint textPaint;
+    @NonNull LegendProperties legendProperties;
 
     public D3Axis(@NonNull AxisOrientation orientation) {
         this.orientation = orientation;
@@ -82,6 +73,7 @@ public class D3Axis<T> extends D3Drawable {
 
     @Override protected void setupPaint() {
         super.setupPaint();
+        drawer.setPaint(paint);
         setupTextPaint();
     }
 
@@ -93,145 +85,15 @@ public class D3Axis<T> extends D3Drawable {
     }
 
     private void setupDefaultActions() {
+        D3AxisActionsInitializer<T> initializer = new D3AxisActionsInitializer<>(this);
         if (orientation == AxisOrientation.RIGHT || orientation == AxisOrientation.LEFT) {
-            onScrollAction(getHorizontalOnScrollAction());
-            onPinchAction(getHorizontalOnPinchAction());
+            onScrollAction(initializer.getHorizontalOnScrollAction());
+            onPinchAction(initializer.getHorizontalOnPinchAction());
         } else {
-            onScrollAction(getVerticalOnScrollAction());
-            onPinchAction(getVerticalOnPinchAction());
+            onScrollAction(initializer.getVerticalOnScrollAction());
+            onPinchAction(initializer.getVerticalOnPinchAction());
         }
         onClickAction(null);
-    }
-
-    @NonNull private OnScrollAction getHorizontalOnScrollAction() {
-        return new OnScrollAction() {
-            @Override public void onScroll(
-                ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
-            ) {
-                D3Converter<T> converter = scale.converter();
-                if (converter == null) {
-                    throw new IllegalStateException(CONVERTER_ERROR);
-                }
-                T[] domain = scale.domain();
-                if (domain == null) {
-                    throw new IllegalStateException(DOMAIN_ERROR);
-                }
-                converter.convert(domain[0]);
-                Float[] range = scale.range();
-                if (range == null) {
-                    throw new IllegalStateException(RANGE_ERROR);
-                }
-                float sign = dY < 0F ? 1F : -1F;
-                float absDy = Math.abs(dY);
-                float offset = converter.convert(domain[0])
-                    - converter.convert(scale.invert(range[0] + absDy));
-                offset *= sign * 2;
-                domain[0] = converter.invert(converter.convert(domain[0]) - offset);
-                domain[1] = converter.invert(converter.convert(domain[1]) - offset);
-                scale.domain(domain);
-                updateNeeded();
-            }
-        };
-    }
-
-    @NonNull private OnPinchAction getHorizontalOnPinchAction() {
-        return new OnPinchAction() {
-            @Override public void onPinch(
-                PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
-                float coordinateMobileX, float coordinateMobileY, float dX, float dY
-            ) {
-                resizeOnPinch(coordinateStaticY, coordinateMobileY, dY);
-                updateNeeded();
-            }
-        };
-    }
-
-    private void resizeOnPinch(
-        float coordinateStatic, float coordinateMobile, float diffCoordinate
-    ) {
-        if (Math.abs(coordinateMobile - coordinateStatic) < PINCH_MIN_SPACING) {
-            return;
-        }
-
-        Float[] range = range();
-
-        float coordinateMin = range[0];
-        float coordinateMax = range[1];
-
-        int inverted = 0;
-        if (coordinateMin > coordinateMax) {
-            inverted = 1;
-            float tmp = coordinateMin;
-            coordinateMin = coordinateMax;
-            coordinateMax = tmp;
-        }
-
-        if ((coordinateMobile < coordinateMin || coordinateMobile > coordinateMax)
-            || (coordinateStatic < coordinateMin || coordinateStatic > coordinateMax)) {
-            return;
-        }
-
-        D3Converter<T> converter = scale.converter();
-        if (converter == null) {
-            throw new IllegalStateException(CONVERTER_ERROR);
-        }
-        float propMobile = (coordinateMobile + diffCoordinate - coordinateMin)
-            / (coordinateMax - coordinateMin);
-        float propStatic = (coordinateStatic - coordinateMin) / (coordinateMax - coordinateMin);
-        float valueStatic = converter.convert(scale.invert(coordinateStatic));
-        float valueMobile = converter.convert(scale.invert(coordinateMobile - diffCoordinate));
-
-        float newDomainMin = (valueMobile * propStatic - valueStatic * propMobile)
-            / (propStatic - propMobile);
-        float newDomainMax = (newDomainMin * (propMobile - 1) + valueMobile) /
-            propMobile;
-
-        T[] domain = domain();
-        domain[inverted] = converter.invert(newDomainMin);
-        domain[1 - inverted] = converter.invert(newDomainMax);
-        domain(domain);
-    }
-
-    @NonNull private OnScrollAction getVerticalOnScrollAction() {
-        return new OnScrollAction() {
-            @Override public void onScroll(
-                ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
-            ) {
-                D3Converter<T> converter = scale.converter();
-                if (converter == null) {
-                    throw new IllegalStateException(CONVERTER_ERROR);
-                }
-                T[] domain = scale.domain();
-                if (domain == null) {
-                    throw new IllegalStateException(DOMAIN_ERROR);
-                }
-                Float[] range = scale.range();
-                if (range == null) {
-                    throw new IllegalStateException(RANGE_ERROR);
-                }
-                float sign = dX < 0F ? 1F : -1F;
-                float absoluteDx = Math.abs(dX);
-                float offset = converter.convert(domain[0])
-                    - converter.convert(scale.invert(range[0] + absoluteDx));
-                offset *= sign * 2;
-                domain[0] = converter.invert(converter.convert(domain[0]) - offset);
-                domain[1] = converter.invert(converter.convert(domain[1]) - offset);
-                scale.domain(domain);
-                updateNeeded();
-            }
-        };
-    }
-
-    @NonNull private OnPinchAction getVerticalOnPinchAction() {
-        return new OnPinchAction() {
-            @Override public void onPinch(
-                PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
-                float coordinateMobileX, float coordinateMobileY, float dX, float dY
-            ) {
-                resizeOnPinch(coordinateStaticX, coordinateMobileX, dX);
-                updateNeeded();
-            }
-        };
     }
 
     /**
@@ -309,7 +171,7 @@ public class D3Axis<T> extends D3Drawable {
      */
     public D3Axis<T> offsetX(final float offsetX) {
         this.offsetX = new D3FloatFunction() {
-            @NonNull @Override public float getFloat() {
+            @Override public float getFloat() {
                 return offsetX;
             }
         };
@@ -454,14 +316,17 @@ public class D3Axis<T> extends D3Drawable {
         return this;
     }
 
-    private float firstBoundRange() {
-        if (scale.range() == null) {
+    float firstBoundRange() {
+        if (scale.range() == null || scale.range().length == 0) {
             throw new IllegalStateException(RANGE_ERROR);
         }
         return scale.range()[0];
     }
 
-    private float lastBoundRange() {
+    float lastBoundRange() {
+        if (scale.range() == null || scale.range().length == 0) {
+            throw new IllegalStateException(RANGE_ERROR);
+        }
         Float[] range = scale.range();
         return range[range.length - 1];
     }
@@ -603,10 +468,8 @@ public class D3Axis<T> extends D3Drawable {
     }
 
     @Override public D3Axis<T> setClipRect(
-        @NonNull D3FloatFunction leftLimit,
-        @NonNull D3FloatFunction topLimit,
-        @NonNull D3FloatFunction rightLimit,
-        @NonNull D3FloatFunction bottomLimit
+        @NonNull D3FloatFunction leftLimit, @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit, @NonNull D3FloatFunction bottomLimit
     ) {
         super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
         return this;
@@ -623,176 +486,6 @@ public class D3Axis<T> extends D3Drawable {
     }
 
     @Override public void draw(@NonNull Canvas canvas) {
-        if (lazyRecomputing) {
-            if (cachedDrawing == null) {
-                throw new IllegalStateException(PREPARE_PARAMETERS_ERROR);
-            }
-            canvas.drawBitmap(cachedDrawing.getValue(), 0f, 0f, null);
-        } else {
-            drawLine(canvas);
-            drawTicks(canvas);
-            drawTicksLegend(canvas);
-        }
-    }
-
-    private void drawLine(@NonNull Canvas canvas) {
-        float startX;
-        float startY;
-        float endX;
-        float endY;
-        float computedOffsetX = this.offsetX.getFloat();
-        float computedOffsetY = this.offsetY.getFloat();
-        if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
-            startX = computedOffsetX + firstBoundRange();
-            startY = computedOffsetY;
-            endX = computedOffsetX + lastBoundRange();
-            endY = computedOffsetY;
-        } else {
-            startX = computedOffsetX;
-            startY = computedOffsetY + firstBoundRange();
-            endX = computedOffsetX;
-            endY = computedOffsetY + lastBoundRange();
-        }
-
-        canvas.drawLine(startX, startY, endX, endY, paint);
-    }
-
-    private void drawTicks(@NonNull Canvas canvas) {
-        if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
-            drawVerticalTicks(canvas);
-        } else {
-            drawHorizontalTicks(canvas);
-        }
-    }
-
-    private void drawHorizontalTicks(@NonNull Canvas canvas) {
-        float computedOffsetX = this.offsetX.getFloat();
-        float computedOffsetY = this.offsetY.getFloat();
-        float outerX = computedOffsetX - outerTickSize / 2;
-        float innerX = computedOffsetX + innerTickSize / 2;
-        for (int i = 0; i < ticksNumber; i++) {
-            float coordinateY = computedOffsetY + lastBoundRange() * i / (ticksNumber - 1F)
-                + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
-            canvas.drawLine(outerX, coordinateY, innerX, coordinateY, paint);
-        }
-    }
-
-    private void drawVerticalTicks(@NonNull Canvas canvas) {
-        float computedOffsetX = this.offsetX.getFloat();
-        float computedOffsetY = this.offsetY.getFloat();
-        float outerY = computedOffsetY + outerTickSize / 2;
-        float innerY = computedOffsetY - innerTickSize / 2;
-        for (int i = 0; i < ticksNumber; i++) {
-            float coordinateX = computedOffsetX + lastBoundRange() * i / (ticksNumber - 1F)
-                + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
-            canvas.drawLine(coordinateX, innerY, coordinateX, outerY, paint);
-        }
-    }
-
-    private void drawTicksLegend(@NonNull Canvas canvas) {
-        if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
-            drawHorizontalLegend(canvas);
-        } else {
-            drawVerticalLegend(canvas);
-        }
-    }
-
-    private void drawVerticalLegend(@NonNull Canvas canvas) {
-        float computedOffsetX = this.offsetX.getFloat();
-        String[] usableTicks = this.ticks == null ?
-            scale.ticksLegend(this.ticksNumber) : this.ticks;
-        float coordinateX = orientation == AxisOrientation.LEFT ?
-            computedOffsetX - innerTickSize : computedOffsetX + innerTickSize;
-        coordinateX += legendProperties.offsetX();
-
-        for (int i = 0; i < usableTicks.length; i++) {
-            drawSingleVerticalLegend(canvas, usableTicks[i], coordinateX, i);
-        }
-    }
-
-    private void drawSingleVerticalLegend(
-        @NonNull Canvas canvas, @NonNull String tick, float coordinateX, int i
-    ) {
-        float computedOffsetY = this.offsetY.getFloat();
-        float coordinateY = computedOffsetY + lastBoundRange() * i / (ticksNumber - 1F)
-            + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
-        coordinateY += legendProperties.offsetY();
-        coordinateY += alignmentVerticalOffset(tick);
-        float realCoordinateX = coordinateX - (orientation == AxisOrientation.LEFT ?
-            textPaint.measureText("" + tick) : 0);
-        canvas.drawText(tick, realCoordinateX, coordinateY, textPaint);
-    }
-
-    private float alignmentVerticalOffset(@NonNull String legend) {
-        float height = TextHelper.getTextHeight(legend, textPaint);
-        switch (legendProperties.verticalAlignment()) {
-            case BOTTOM:
-                return height;
-            case CENTER:
-                return height / 2F;
-            default:
-                return 0F;
-        }
-    }
-
-    private void drawHorizontalLegend(@NonNull Canvas canvas) {
-        float computedOffsetY = this.offsetY.getFloat();
-        String[] usableTicks = this.ticks == null ?
-            scale.ticksLegend(this.ticksNumber) : this.ticks;
-        float coordinateY = orientation == AxisOrientation.TOP ?
-            computedOffsetY - innerTickSize : computedOffsetY + innerTickSize;
-        coordinateY += legendProperties.offsetY();
-
-        for (int i = 0; i < usableTicks.length; i++) {
-            drawSingleHorizontalLegend(canvas, usableTicks, coordinateY, i);
-        }
-    }
-
-    private void drawSingleHorizontalLegend(
-        @NonNull Canvas canvas,
-        @NonNull String[] ticks,
-        float coordinateY,
-        int i
-    ) {
-        float computedOffsetX = this.offsetX.getFloat();
-        float coordinateX = computedOffsetX + lastBoundRange() * i / (ticksNumber - 1F)
-            + firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
-        coordinateX += legendProperties.offsetX();
-        coordinateX -= alignmentHorizontalOffset(ticks[i]);
-        float realCoordinateY = coordinateY + (orientation == AxisOrientation.TOP ? 0 :
-            TextHelper.getTextHeight(ticks[i], textPaint));
-
-        canvas.drawText(ticks[i], coordinateX, realCoordinateY, textPaint);
-    }
-
-    private float alignmentHorizontalOffset(@NonNull String legend) {
-        switch (legendProperties.horizontalAlignement()) {
-            case LEFT:
-                return textPaint.measureText(legend);
-            case CENTER:
-                return textPaint.measureText(legend) / 2F;
-            default:
-                return 0F;
-        }
-    }
-
-    @Override public void prepareParameters() {
-        if (!lazyRecomputing || calculationNeeded() == 0) {
-            return;
-        }
-        cachedDrawing = new ValueStorage<>();
-        cachedDrawing.setValue(
-            new ValueRunnable<Bitmap>() {
-                @Override protected void computeValue() {
-                    value = Bitmap.createBitmap(
-                        (int) width(), (int) height(), Bitmap.Config.ARGB_8888
-                    );
-                    Canvas temporaryCanvas = new Canvas(value);
-                    drawLine(temporaryCanvas);
-                    drawTicks(temporaryCanvas);
-                    drawTicksLegend(temporaryCanvas);
-                }
-            }
-        );
+        drawer.draw(canvas);
     }
 }
