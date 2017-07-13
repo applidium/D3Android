@@ -27,7 +27,9 @@ public class MainActivity extends Activity {
         setContentView(R.layout.main_activity);
 
         view = (D3View) findViewById(R.id.test);
-        Float[] test = new Float[40];
+        int size = 40;
+        Float[] test = new Float[size];
+        float[] test2 = new float[size];
         for (int i = 0; i < test.length; i++) {
             test[i] = (float) i + 1;
         }
@@ -39,7 +41,7 @@ public class MainActivity extends Activity {
         animator.start();
 
         final D3Arc<Float> arc = new D3Arc<>(test)
-            .weights(ArrayConverterHelper.convertArray(test))
+            .weights(ArrayConverterHelper.convertArray(test, test2))
             .innerRadius(new D3FloatFunction() {
                 @Override public float getFloat() {
                     return innerRadius;

@@ -452,7 +452,7 @@ public class D3Axis<T> extends D3Drawable {
     }
 
     private float lastBoundRange() {
-        float[] range = ArrayConverterHelper.convertArray(scale.range());
+        Float[] range = scale.range();
         return range[range.length - 1];
     }
 

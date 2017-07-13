@@ -12,7 +12,9 @@ public class D3Scale<T> {
     private static final String CONVERTER_ERROR = "Converter should not be null";
 
     @Nullable private D3RangeFunction<T> domain;
+    private float[] domainArray;
     @Nullable private D3RangeFunction<Float> range;
+    private float[] rangeArray;
 
     @NonNull private Interpolator interpolator;
     @Nullable private D3Converter<T> converter;
@@ -52,13 +54,13 @@ public class D3Scale<T> {
      * Sets the domain of the Scale.
      */
     public D3Scale<T> domain(@NonNull final T[] domain) {
-        this.domain = new D3RangeFunction<T>() {
+        domain(new D3RangeFunction<T>() {
             private T[] data = domain.clone();
 
             @Override public T[] getRange() {
                 return data.clone();
             }
-        };
+        });
         return this;
     }
 
@@ -67,6 +69,7 @@ public class D3Scale<T> {
      */
     public D3Scale<T> domain(@Nullable D3RangeFunction<T> domain) {
         this.domain = domain;
+        domainArray = new float[domain.getRange().length];
         return this;
     }
 
@@ -103,13 +106,13 @@ public class D3Scale<T> {
      * Sets the range of the Scale.
      */
     public D3Scale<T> range(@NonNull final Float[] range) {
-        this.range = new D3RangeFunction<Float>() {
+        range(new D3RangeFunction<Float>() {
             private Float[] data = range != null ? range.clone() : null;
 
             @Override @Nullable public Float[] getRange() {
                 return data.clone();
             }
-        };
+        });
         return this;
     }
 
@@ -118,6 +121,7 @@ public class D3Scale<T> {
      */
     public D3Scale<T> range(@Nullable D3RangeFunction<Float> range) {
         this.range = range;
+        rangeArray = new float[range.getRange().length];
         return this;
     }
 
@@ -145,8 +149,8 @@ public class D3Scale<T> {
         }
         return interpolator.interpolate(
             converter.convert(domainValue),
-            ArrayConverterHelper.convertArray(domainFloatValue()),
-            ArrayConverterHelper.convertArray(range())
+            ArrayConverterHelper.convertArray(domainFloatValue(), domainArray),
+            ArrayConverterHelper.convertArray(range(), rangeArray)
         );
     }
 
@@ -162,8 +166,8 @@ public class D3Scale<T> {
         }
         float interpolation = interpolator.interpolate(
             rangeValue,
-            ArrayConverterHelper.convertArray(range()),
-            ArrayConverterHelper.convertArray(domainFloatValue())
+            ArrayConverterHelper.convertArray(range(), rangeArray),
+            ArrayConverterHelper.convertArray(domainFloatValue(), domainArray)
         );
         return converter.invert(interpolation);
     }
@@ -205,7 +209,7 @@ public class D3Scale<T> {
         if (domain == null) {
             throw new IllegalStateException(DOMAIN_ERROR);
         }
-        float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue());
+        float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue(), domainArray);
         float[] ticks = new float[count];
         if (count == 1) {
             ticks[0] = (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2;
@@ -230,7 +234,7 @@ public class D3Scale<T> {
         if (converter == null) {
             throw new IllegalStateException(CONVERTER_ERROR);
         }
-        float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue());
+        float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue(), domainArray);
         String[] legends = new String[count];
 
         if (count == 1) {
