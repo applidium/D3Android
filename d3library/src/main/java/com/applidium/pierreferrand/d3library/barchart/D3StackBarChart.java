@@ -4,6 +4,9 @@ import android.graphics.Canvas;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 
 import java.util.ArrayList;
@@ -133,6 +136,21 @@ public class D3StackBarChart<T> extends D3Drawable {
         for (int i = 0; i < barCharts.size(); i++) {
             barCharts.get(i).colors(colors[i % colors.length]);
         }
+        return this;
+    }
+
+    @Override public D3StackBarChart<T> onClickAction(OnClickAction onClickAction) {
+        super.onClickAction(onClickAction);
+        return this;
+    }
+
+    @Override public D3StackBarChart<T> onScrollAction(OnScrollAction onScrollAction) {
+        super.onScrollAction(onScrollAction);
+        return this;
+    }
+
+    @Override public D3StackBarChart<T> onPinchAction(OnPinchAction onPinchAction) {
+        super.onPinchAction(onPinchAction);
         return this;
     }
 

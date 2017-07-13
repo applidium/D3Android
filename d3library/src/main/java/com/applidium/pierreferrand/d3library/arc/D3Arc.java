@@ -8,6 +8,9 @@ import android.graphics.PorterDuffXfermode;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.Line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.helper.ColorHelper;
 import com.applidium.pierreferrand.d3library.helper.TextHelper;
@@ -246,6 +249,21 @@ public class D3Arc<T> extends D3Drawable {
             currentAngle += 360f * weights[indexData] / totalWeight;
         }
         return data[indexData];
+    }
+
+    @Override public D3Arc<T> onClickAction(OnClickAction onClickAction) {
+        super.onClickAction(onClickAction);
+        return this;
+    }
+
+    @Override public D3Arc<T> onScrollAction(OnScrollAction onScrollAction) {
+        super.onScrollAction(onScrollAction);
+        return this;
+    }
+
+    @Override public D3Arc<T> onPinchAction(OnPinchAction onPinchAction) {
+        super.onPinchAction(onPinchAction);
+        return this;
     }
 
     @Override public void draw(Canvas canvas) {
