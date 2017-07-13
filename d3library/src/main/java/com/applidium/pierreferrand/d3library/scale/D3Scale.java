@@ -44,7 +44,7 @@ public class D3Scale<T> {
             private T[] data = domain != null ? domain.clone() : null;
 
             @Override @Nullable public T[] getRange() {
-                return data;
+                return data.clone();
             }
         };
         return this;

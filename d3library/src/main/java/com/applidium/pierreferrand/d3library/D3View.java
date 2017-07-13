@@ -7,6 +7,7 @@ import android.util.AttributeSet;
 import android.view.MotionEvent;
 import android.view.View;
 
+import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 
@@ -18,10 +19,12 @@ public class D3View extends View {
     private boolean clickTracker;
 
     public final List<D3Drawable> drawables;
+    public final List<Action> afterDrawActions;
 
     public D3View(Context context, @Nullable AttributeSet attrs) {
         super(context, attrs);
         drawables = new ArrayList<>();
+        afterDrawActions = new ArrayList<>();
     }
 
     public void add(D3Drawable drawable) {
@@ -33,6 +36,9 @@ public class D3View extends View {
         for (D3Drawable drawable : drawables) {
             drawable.setDimensions(getHeight(), getWidth());
             drawable.draw(canvas);
+        }
+        for (Action action : afterDrawActions) {
+            action.execute();
         }
     }
 
@@ -93,13 +99,23 @@ public class D3View extends View {
         float[] maxDifferenceAbsolute = new float[event.getPointerCount()];
         float[] differenceX = new float[event.getPointerCount()];
         float[] differenceY = new float[event.getPointerCount()];
+
+        int histLength = event.getHistorySize();
         computeDifferences(event, maxDifferenceAbsolute, differenceX, differenceY);
         int indexMovement = findFingerMovedIndex(maxDifferenceAbsolute);
         PinchType pinchType = computePinchType(
             event, differenceX[indexMovement], differenceY[indexMovement], indexMovement
         );
         for (D3Drawable drawable : drawables) {
-            drawable.onPinch(pinchType, differenceX[indexMovement], differenceY[indexMovement]);
+            drawable.onPinch(
+                pinchType,
+                event.getHistoricalX(1 - indexMovement, histLength - 1),
+                event.getHistoricalY(1 - indexMovement, histLength - 1),
+                event.getHistoricalX(indexMovement, histLength - 1),
+                event.getHistoricalY(indexMovement, histLength - 1),
+                differenceX[indexMovement],
+                differenceY[indexMovement]
+            );
         }
         invalidate();
     }
@@ -149,15 +165,17 @@ public class D3View extends View {
 
     private void handleScrollMovement(MotionEvent event, int historySize) {
         ScrollDirection direction;
-        float diffX = event.getX() - event.getHistoricalX(historySize - 1);
-        float diffY = event.getY() - event.getHistoricalY(historySize - 1);
+        float previousX = event.getHistoricalX(historySize - 1);
+        float previousY = event.getHistoricalY(historySize - 1);
+        float diffX = event.getX() - previousX;
+        float diffY = event.getY() - previousY;
         if (Math.abs(diffX) > Math.abs(diffY)) {
             direction = diffX > 0f ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
         } else {
             direction = diffY > 0f ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
         }
         for (D3Drawable drawable : drawables) {
-            drawable.onScroll(direction, diffX, diffY);
+            drawable.onScroll(direction, previousX, previousY, diffX, diffY);
         }
         invalidate();
     }
