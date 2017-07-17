@@ -8,6 +8,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
@@ -27,6 +28,8 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private static final int DEFAULT_CLICK_ACTIONS_NUMBER = 3;
     private boolean mustRun = true;
     private boolean initialized;
+    private boolean isSurfaceCreated;
+    private final Object surfaceKey = new Object();
 
     private Object key = new Object();
 
@@ -109,10 +112,20 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
                     e.printStackTrace();
                 }
             }
-            Canvas c = getHolder().lockCanvas();
-            if (c != null) {
-                draw(c);
-                getHolder().unlockCanvasAndPost(c);
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+                return;
+            }
+            synchronized (surfaceKey) {
+                if (!isSurfaceCreated) {
+                    continue;
+                }
+                Surface surface = getHolder().getSurface();
+                Canvas c = surface.lockHardwareCanvas();
+
+                if (c != null) {
+                    draw(c);
+                    getHolder().getSurface().unlockCanvasAndPost(c);
+                }
             }
         }
     }
@@ -290,6 +303,9 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     @Override public void surfaceCreated(SurfaceHolder holder) {
         launchDisplay();
         initialized = true;
+        synchronized (surfaceKey) {
+            isSurfaceCreated = true;
+        }
     }
 
     @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
@@ -299,6 +315,9 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     }
 
     @Override public void surfaceDestroyed(SurfaceHolder holder) {
+        synchronized (surfaceKey) {
+            isSurfaceCreated = false;
+        }
         onPause();
     }
 }
