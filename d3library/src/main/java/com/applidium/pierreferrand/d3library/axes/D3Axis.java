@@ -1,5 +1,6 @@
 package com.applidium.pierreferrand.d3library.axes;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.support.annotation.ColorInt;
@@ -12,6 +13,7 @@ import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 @SuppressWarnings({"WeakerAccess", "unused"}) public class D3Axis<T> extends D3Drawable {
     private static final float DEFAULT_TICK_SIZE = 25F;
@@ -25,6 +27,9 @@ import com.applidium.pierreferrand.d3library.scale.D3Scale;
     private static final String RANGE_ERROR = "Range should not be null";
 
     @NonNull private final D3AxisDrawer<T> drawer = new D3AxisDrawer<>(this);
+    @NonNull private final BitmapValueRunnable<T> bitmapValueRunnable =
+        new BitmapValueRunnable<>(drawer);
+    @NonNull private final ValueStorage<Bitmap> bitmapValueStorage = new ValueStorage<>();
 
     @NonNull D3FloatFunction offsetX;
     @NonNull D3FloatFunction offsetY;
@@ -486,7 +491,22 @@ import com.applidium.pierreferrand.d3library.scale.D3Scale;
         return this;
     }
 
+    @Override public void prepareParameters() {
+        if (!lazyRecomputing || calculationNeeded() != 1) {
+            return;
+        }
+        bitmapValueStorage.setValue(bitmapValueRunnable);
+    }
+
+    @Override protected void onDimensionsChange(float width, float height) {
+        bitmapValueRunnable.resizeBitmap(width, height);
+    }
+
     @Override public void draw(@NonNull Canvas canvas) {
-        drawer.draw(canvas);
+        if (lazyRecomputing && calculationNeeded() == 0) {
+            canvas.drawBitmap(bitmapValueStorage.getValue(), 0F, 0F, null);
+        } else {
+            drawer.draw(canvas);
+        }
     }
 }
