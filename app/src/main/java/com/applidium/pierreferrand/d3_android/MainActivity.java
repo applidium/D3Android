@@ -6,11 +6,11 @@ import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.D3View;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.area.D3Area;
 import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
 import com.applidium.pierreferrand.d3library.axes.D3Axis;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
@@ -56,8 +56,12 @@ public class MainActivity extends Activity {
                 })
                 .domain(new Float[]{25f, 730f})
                 .range(new D3RangeFunction() {
+                    float[] range = new float[2];
+
                     @Override public float[] getRange() {
-                        return new float[]{view.getHeight() * 0.8f, view.getHeight() * 0.1f};
+                        range[0] = view.getHeight() * 0.8f;
+                        range[1] = view.getHeight() * 0.1f;
+                        return range;
                     }
                 });
 
@@ -65,8 +69,12 @@ public class MainActivity extends Activity {
             new D3Axis<Float>(AxisOrientation.TOP)
                 .domain(new Float[]{1f, 14f,})
                 .range(new D3RangeFunction() {
+                    float[] range = new float[2];
+
                     @Override public float[] getRange() {
-                        return new float[]{0.05f * view.getWidth(), 0.95f * view.getWidth()};
+                        range[0] = view.getWidth() * 0.1f;
+                        range[1] = view.getWidth() * 0.8f;
+                        return range;
                     }
                 }).converter(new D3Converter<Float>() {
                 @Override public float convert(Float toConvert) {
@@ -83,16 +91,16 @@ public class MainActivity extends Activity {
             });
 
         Paint lightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        lightPaint.setStyle(Paint.Style.STROKE);
         lightPaint.setColor(0XFF00F0F0);
         lightPaint.setStrokeWidth(12f);
-        lightPaint.setStyle(Paint.Style.STROKE);
 
-        LightData[] lightData = new LightData[500];
+        LightData[] lightData = new LightData[150];
         for (int i = 0; i < lightData.length; i++) {
             lightData[i] = new LightData(i, (float) Math.random() * 400f + 125f);
         }
         lightCurve =
-            new D3Line<>(lightData)
+            new D3Area<>(lightData)
                 .x(new D3DataMapperFunction<LightData>() {
                     @Override
                     public float compute(LightData object, int position, LightData[] data) {
@@ -127,30 +135,28 @@ public class MainActivity extends Activity {
                             return (float) (view.getHeight() * 0.98);
                         }
                     }
-                )
-                .onClickAction(
-                    new OnClickAction() {
-                        boolean lazyRecomputing = true;
+                ).ground(new D3FloatFunction() {
+                @Override public float getFloat() {
+                    return leftAxis.scale().value(100F);
+                }
+            });
 
-                        @Override public void onClick(float X, float Y) {
-                            lazyRecomputing = !lazyRecomputing;
-                            lightCurve.lazyRecomputing(lazyRecomputing);
-                        }
-                    }
-                );
-
-        Paint temperaturePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        temperaturePaint.setColor(0XFFFF0000);
-        temperaturePaint.setStrokeWidth(12f);
-
-        view.add(timeAxis.ticks(10));
-        view.add(leftAxis.ticks(10));
-        view.add(lightCurve);
+        view.add(timeAxis);
+        view.add(leftAxis);
+        view.add(lightCurve.lazyRecomputing(false));
         view.add(new D3Drawable() {
             @Override public void draw(@NonNull Canvas canvas) {
+
             }
-        }.lazyRecomputing(false));
-        view.setMinimumTimePerFrame(17);
+        }
+        .lazyRecomputing(false)
+        .onClickAction(new OnClickAction() {
+            boolean lazyRecomputing = false;
+            @Override public void onClick(float X, float Y) {
+                lazyRecomputing = !lazyRecomputing;
+                lightCurve.lazyRecomputing(lazyRecomputing);
+            }
+        }));
     }
 
     private static class LightData {
