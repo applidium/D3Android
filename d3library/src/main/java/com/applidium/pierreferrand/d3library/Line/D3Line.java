@@ -113,7 +113,7 @@ public class D3Line<T> extends D3Drawable {
      * Returns the data used by the Line.
      */
     @Nullable public T[] data() {
-        return data != null ? data.clone() : null;
+        return data;
     }
 
     /**
