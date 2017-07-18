@@ -168,6 +168,7 @@ public class D3Line<T> extends D3Drawable {
 
     @Override public D3Line<T> paint(@NonNull Paint paint) {
         super.paint(paint);
+        paint.setStyle(Paint.Style.STROKE);
         return this;
     }
 

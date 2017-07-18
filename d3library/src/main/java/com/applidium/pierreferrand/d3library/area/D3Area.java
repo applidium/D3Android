@@ -80,6 +80,7 @@ public class D3Area<T> extends D3Line<T> {
 
     @Override public D3Area<T> paint(@NonNull Paint paint) {
         super.paint(paint);
+        paint.setStyle(Paint.Style.FILL);
         return this;
     }
 
