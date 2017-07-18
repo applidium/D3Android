@@ -1,23 +1,27 @@
 package com.applidium.pierreferrand.d3library.area;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.Path;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
-import com.applidium.pierreferrand.d3library.line.D3Line;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
+import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.line.D3Line;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 public class D3Area<T> extends D3Line<T> {
     private static final String GROUND_ERROR = "Ground should not be null";
     private static final String DATA_ERROR = "Data should not be null";
-    @Nullable private D3FloatFunction ground;
+    @Nullable D3FloatFunction ground;
+
+    private final ValueStorage<Bitmap> bitmapValueStorage = new ValueStorage<>();
+    private final BitmapValueRunnable<T> bitmapValueRunnable = new BitmapValueRunnable<>(this);
 
     public D3Area() {
         super();
@@ -102,29 +106,20 @@ public class D3Area<T> extends D3Line<T> {
         return this;
     }
 
-    @Override public void draw(@NonNull Canvas canvas) {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-        if (data.length < 2) {
+    @Override protected void onDimensionsChange(float width, float height) {
+        super.onDimensionsChange(width, height);
+        bitmapValueRunnable.onDimensionsChange(width, height);
+    }
+
+    @Override public void prepareParameters() {
+        super.prepareParameters();
+        if (lazyRecomputing && calculationNeeded() == 0) {
             return;
         }
-        if (ground == null) {
-            throw new IllegalStateException(GROUND_ERROR);
-        }
+        bitmapValueStorage.setValue(bitmapValueRunnable);
+    }
 
-        float[] x = x();
-        float[] y = y();
-        float computedGrounded = ground.getFloat();
-
-        Path path = new Path();
-        path.moveTo(x[0], y[0]);
-        for (int i = 1; i < data.length; i++) {
-            path.lineTo(x[i], y[i]);
-        }
-        path.lineTo(x[data.length - 1], computedGrounded);
-        path.lineTo(x[0], computedGrounded);
-
-        canvas.drawPath(path, paint);
+    @Override public void draw(@NonNull Canvas canvas) {
+        canvas.drawBitmap(bitmapValueStorage.getValue(), 0F, 0F, null);
     }
 }
