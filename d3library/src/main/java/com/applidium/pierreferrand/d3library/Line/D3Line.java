@@ -68,7 +68,7 @@ public class D3Line<T> extends D3Drawable {
         final float[] result = new float[data.length];
 
         List<Callable<Object>> tasks = new ArrayList<>();
-        for (int k = 0; k < ThreadPool.coresNumber; k++) {
+        for (int k = 0; k < ThreadPool.CORES_NUMBER; k++) {
             buildTask(mapper, result, tasks, k);
         }
         ThreadPool.execute(tasks);
@@ -87,7 +87,7 @@ public class D3Line<T> extends D3Drawable {
                     if (data == null) {
                         throw new IllegalStateException(DATA_ERROR);
                     }
-                    for (int i = k; i < result.length; i += ThreadPool.coresNumber) {
+                    for (int i = k; i < result.length; i += ThreadPool.CORES_NUMBER) {
                         result[i] = mapper.compute(data[i], i, data);
                     }
                 }
