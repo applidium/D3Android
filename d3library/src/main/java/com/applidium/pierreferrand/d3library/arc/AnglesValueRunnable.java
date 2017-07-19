@@ -66,7 +66,7 @@ public class AnglesValueRunnable<T> implements ValueRunnable<Angles> {
         tasks.add(Executors.callable(
             buildLastHalfAnglesTask(computedWeights, angles, totalWeight)
         ));
-        ThreadPool.execute(tasks);
+        ThreadPool.executeOnSecondaryPool(tasks);
         return angles;
     }
 
