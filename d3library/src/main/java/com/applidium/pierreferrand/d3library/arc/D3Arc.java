@@ -30,6 +30,7 @@ public class D3Arc<T> extends D3Drawable {
     @Nullable private D3FloatFunction outerRadius;
     @Nullable private D3FloatFunction innerRadius;
 
+    private boolean optimize = false;
     float padAngle;
 
     @NonNull private D3FloatFunction offsetX;
@@ -420,7 +421,14 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     @Override public void draw(@NonNull Canvas canvas) {
-        canvas.drawBitmap(preComputedArc.getValue(), 0F, 0F, null);
+        if (optimize) {
+            D3ArcDrawer.drawArcs(
+                canvas, innerRadius(), outerRadius(), offsetX(), offsetY(),
+                preComputedAngles.getValue(), paint, colors
+            );
+        } else {
+            canvas.drawBitmap(preComputedArc.getValue(), 0F, 0F, null);
+        }
         drawLabels(canvas);
     }
 
@@ -452,8 +460,10 @@ public class D3Arc<T> extends D3Drawable {
             return;
         }
         preComputedAngles.setValue(anglesValueRunnable, anglesValueRunnable.getKey());
-        preComputedArc.setValue(bitmapValueRunnable, bitmapValueRunnable.getKey());
         preComputedLabels.setValue(labelsValueRunnable, labelsValueRunnable.getKey());
+        if (!optimize) {
+            preComputedArc.setValue(bitmapValueRunnable, bitmapValueRunnable.getKey());
+        }
     }
 
     @Override public D3Arc<T> setClipRect(
@@ -473,6 +483,12 @@ public class D3Arc<T> extends D3Drawable {
 
     @Override protected void onDimensionsChange(float width, float height) {
         bitmapValueRunnable.resizeBitmap(width, height);
+    }
+
+    public D3Arc<T> optimize(boolean optimize) {
+        this.optimize = optimize;
+        updateNeeded();
+        return this;
     }
 
     @Override public D3Arc<T> paint(@NonNull Paint paint) {
