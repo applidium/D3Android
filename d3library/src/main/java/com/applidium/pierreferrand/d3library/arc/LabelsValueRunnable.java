@@ -2,46 +2,26 @@ package com.applidium.pierreferrand.d3library.arc;
 
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
-import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.helper.TextHelper;
 import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
 
-class LabelsValueRunnable<T> implements ValueRunnable<LabelsCoordinates> {
+class LabelsValueRunnable<T> extends ValueRunnable<LabelsCoordinates> {
     private static final String DATA_ERROR = "Data should not be null.";
 
-    @NonNull private final Object key;
     @NonNull private final D3Arc<T> arc;
     @NonNull private final Paint paint;
 
-    @Nullable private LabelsCoordinates properties;
-
-    LabelsValueRunnable(@NonNull D3Arc<T> arc, @NonNull Object key, @NonNull Paint paint) {
-        this.key = key;
+    LabelsValueRunnable(@NonNull D3Arc<T> arc, @NonNull Paint paint) {
         this.arc = arc;
         this.paint = paint;
     }
 
-    Object getKey() {
-        return key;
-    }
-
-    @Override public LabelsCoordinates getValue() {
-        return properties;
-    }
-
-    @Override public void run() {
-        synchronized (key) {
-            computeLabels();
-            key.notifyAll();
-        }
-    }
-
     void setDataLength(int length) {
-        properties = new LabelsCoordinates(length);
+        value = new LabelsCoordinates(length);
     }
 
-    private void computeLabels() {
+    protected void computeValue() {
         if (arc.labels == null) {
             return;
         }
@@ -67,8 +47,8 @@ class LabelsValueRunnable<T> implements ValueRunnable<LabelsCoordinates> {
             coordinateX -= paint.measureText(arc.labels[i]) / 2F;
             coordinateY = outerRadius - radius * (float) Math.sin(radianAngle);
             coordinateY += TextHelper.getTextHeight(arc.labels[i], paint) / 2F;
-            properties.coordinatesX[i] = coordinateX;
-            properties.coordinatesY[i] = coordinateY;
+            value.coordinatesX[i] = coordinateX;
+            value.coordinatesY[i] = coordinateY;
         }
     }
 }

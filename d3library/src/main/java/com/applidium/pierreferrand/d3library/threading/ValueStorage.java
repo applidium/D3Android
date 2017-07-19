@@ -10,40 +10,41 @@ public class ValueStorage<T> {
         initialized = false;
     }
 
-    public ValueStorage(ValueRunnable<T> runnable, Object key) {
-        synchronisationKey = new Object();
-        setValue(runnable, key);
-    }
-
-    public void setValue(ValueRunnable<T> runnable, Object key) {
-        initialized = true;
-        try {
-            synchronized (key) {
-                ThreadPool.execute(runnable);
-                key.wait();
-                storedValue = runnable.getValue();
-                synchronized (synchronisationKey) {
-                    synchronisationKey.notifyAll();
+    public void setValue(final ValueRunnable<T> runnable) {
+        synchronized (synchronisationKey) {
+            initialized = true;
+            storedValue = null;
+        }
+        ThreadPool.execute(new Runnable() {
+            @Override public void run() {
+                try {
+                    runnable.run();
+                    runnable.getSemaphore().acquire();
+                    synchronized (synchronisationKey) {
+                        storedValue = runnable.getValue();
+                        synchronisationKey.notifyAll();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
                 }
             }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
+        });
     }
 
     public T getValue() {
-        if (!initialized) {
-            throw new IllegalStateException("Not initialized");
-        }
         try {
-            while (storedValue == null) {
-                synchronized (synchronisationKey) {
+            synchronized (synchronisationKey) {
+                if (!initialized) {
+                    throw new IllegalStateException("Not initialized");
+                }
+                while (storedValue == null) {
                     synchronisationKey.wait();
                 }
+                return storedValue;
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return null;
         }
-        return storedValue;
     }
 }

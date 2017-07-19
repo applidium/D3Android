@@ -6,40 +6,26 @@ import android.support.annotation.NonNull;
 
 import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
 
-class BitmapValueRunnable<T> implements ValueRunnable<Bitmap> {
-    @NonNull private final Object key = new Object();
+class BitmapValueRunnable<T> extends ValueRunnable<Bitmap> {
     @NonNull private final D3Arc<T> arc;
-
-    @NonNull private Bitmap bitmap;
     @NonNull private final Canvas canvas;
 
     BitmapValueRunnable(@NonNull D3Arc<T> arc) {
         this.arc = arc;
-        bitmap = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
-        canvas = new Canvas(bitmap);
-    }
-
-    Object getKey() {
-        return key;
+        value = Bitmap.createBitmap(1, 1, Bitmap.Config.ARGB_8888);
+        canvas = new Canvas(value);
     }
 
     void resizeBitmap(float width, float height) {
-        bitmap = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(bitmap);
+        value = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888);
+        canvas.setBitmap(value);
     }
 
-    @Override public Bitmap getValue() {
-        return bitmap;
-    }
-
-    @Override public void run() {
-        synchronized (key) {
-            bitmap.eraseColor(0);
-            D3ArcDrawer.drawArcs(
-                canvas, arc.innerRadius(), arc.outerRadius(), arc.offsetX(), arc.offsetY(),
-                arc.preComputedAngles.getValue(), arc.paint(), arc.colors
-            );
-            key.notifyAll();
-        }
+    @Override protected void computeValue() {
+        value.eraseColor(0);
+        D3ArcDrawer.drawArcs(
+            canvas, arc.innerRadius(), arc.outerRadius(), arc.offsetX(), arc.offsetY(),
+            arc.preComputedAngles.getValue(), arc.paint(), arc.colors
+        );
     }
 }

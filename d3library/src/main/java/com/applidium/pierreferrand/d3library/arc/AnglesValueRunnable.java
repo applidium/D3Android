@@ -10,40 +10,25 @@ import java.util.List;
 import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
-public class AnglesValueRunnable<T> implements ValueRunnable<Angles> {
+public class AnglesValueRunnable<T> extends ValueRunnable<Angles> {
     private static final String DATA_ERROR = "Data should not be null.";
     private static final String SUM_WEIGHT_ERROR = "Sum of weight must be different from 0";
     private static final float CIRCLE_ANGLE = 360F;
 
-    @NonNull private final Object key;
     @NonNull private final D3Arc<T> arc;
     @NonNull private final List<Callable<Object>> tasks;
 
-    private Angles angles;
-
-    public AnglesValueRunnable(@NonNull D3Arc<T> arc, @NonNull Object key) {
-        this.key = key;
+    public AnglesValueRunnable(@NonNull D3Arc<T> arc) {
         this.arc = arc;
         tasks = new ArrayList<>();
     }
 
-    void setDataLenght(int length) {
-        angles = new Angles(length);
+    void setDataLength(int length) {
+        value = new Angles(length);
     }
 
-    Object getKey() {
-        return key;
-    }
-
-    @Override public Angles getValue() {
-        return angles;
-    }
-
-    @Override public void run() {
-        synchronized (key) {
-            angles = computeStartAngle();
-            key.notifyAll();
-        }
+    @Override protected void computeValue() {
+        value = computeStartAngle();
     }
 
     private Angles computeStartAngle() {
@@ -61,13 +46,13 @@ public class AnglesValueRunnable<T> implements ValueRunnable<Angles> {
 
         tasks.clear();
         tasks.add(Executors.callable(
-            buildFirstHalfAnglesTask(computedWeights, angles, totalWeight)
+            buildFirstHalfAnglesTask(computedWeights, value, totalWeight)
         ));
         tasks.add(Executors.callable(
-            buildLastHalfAnglesTask(computedWeights, angles, totalWeight)
+            buildLastHalfAnglesTask(computedWeights, value, totalWeight)
         ));
         ThreadPool.executeOnSecondaryPool(tasks);
-        return angles;
+        return value;
     }
 
     @NonNull private Runnable buildFirstHalfAnglesTask(

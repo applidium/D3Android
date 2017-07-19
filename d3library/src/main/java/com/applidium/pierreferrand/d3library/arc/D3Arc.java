@@ -62,8 +62,8 @@ public class D3Arc<T> extends D3Drawable {
         preComputedArc = new ValueStorage<>();
         preComputedLabels = new ValueStorage<>();
         bitmapValueRunnable = new BitmapValueRunnable<>(this);
-        labelsValueRunnable = new LabelsValueRunnable<>(this, new Object(), textPaint);
-        anglesValueRunnable = new AnglesValueRunnable<>(this, new Object());
+        labelsValueRunnable = new LabelsValueRunnable<>(this, textPaint);
+        anglesValueRunnable = new AnglesValueRunnable<>(this);
 
         if (data != null) {
             data(data);
@@ -170,7 +170,7 @@ public class D3Arc<T> extends D3Drawable {
      */
     public D3Arc<T> data(@NonNull T[] data) {
         weightArray = new float[data.length];
-        anglesValueRunnable.setDataLenght(data.length);
+        anglesValueRunnable.setDataLength(data.length);
         labelsValueRunnable.setDataLength(data.length);
         this.data = data.clone();
         return this;
@@ -459,10 +459,10 @@ public class D3Arc<T> extends D3Drawable {
         if (lazyRecomputing && calculationNeeded == 0) {
             return;
         }
-        preComputedAngles.setValue(anglesValueRunnable, anglesValueRunnable.getKey());
-        preComputedLabels.setValue(labelsValueRunnable, labelsValueRunnable.getKey());
+        preComputedAngles.setValue(anglesValueRunnable);
+        preComputedLabels.setValue(labelsValueRunnable);
         if (!optimize) {
-            preComputedArc.setValue(bitmapValueRunnable, bitmapValueRunnable.getKey());
+            preComputedArc.setValue(bitmapValueRunnable);
         }
     }
 

@@ -196,10 +196,10 @@ public class D3Line<T> extends D3Drawable {
     }
 
     @Override public void prepareParameters() {
-        final Object keyX = new Object();
-        final Object keyY = new Object();
-        storeX = new ValueStorage<>(buildRunnable(keyX, x), keyX);
-        storeY = new ValueStorage<>(buildRunnable(keyY, y), keyY);
+        storeX = new ValueStorage<>();
+        storeX.setValue(buildRunnable(x));
+        storeY = new ValueStorage<>();
+        storeY.setValue(buildRunnable(y));
     }
 
     @Override public D3Line<T> setClipRect(
@@ -233,20 +233,11 @@ public class D3Line<T> extends D3Drawable {
     }
 
     @NonNull private ValueRunnable<float[]> buildRunnable(
-        @NonNull final Object key, @NonNull final D3DataMapperFunction<T> mapper
+        @NonNull final D3DataMapperFunction<T> mapper
     ) {
         return new ValueRunnable<float[]>() {
-            float[] value;
-
-            @Override public float[] getValue() {
-                return value;
-            }
-
-            @Override public void run() {
-                synchronized (key) {
-                    value = compute(mapper);
-                    key.notify();
-                }
+            @Override protected void computeValue() {
+                value = compute(mapper);
             }
         };
     }
