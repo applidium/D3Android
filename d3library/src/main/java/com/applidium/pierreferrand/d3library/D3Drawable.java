@@ -17,6 +17,8 @@ public abstract class D3Drawable {
     private static final float DEFAULT_STROKE_WIDTH = 5.0F;
     private static final int MAX_REDRAW_NEEDED = 4;
 
+    private final Object key = new Object();
+
     @Nullable private D3FloatFunction leftLimit;
     @Nullable private D3FloatFunction rightLimit;
     @Nullable private D3FloatFunction topLimit;
@@ -27,7 +29,7 @@ public abstract class D3Drawable {
     private int canvasState;
 
     protected boolean lazyRecomputing = true;
-    protected int calculationNeeded = 1;
+    private int calculationNeeded = 1;
 
     @NonNull protected Paint paint;
 
@@ -241,6 +243,22 @@ public abstract class D3Drawable {
      * has lazy recomputing enable. See {@link #lazyRecomputing(boolean)} for more information.
      */
     public final void updateNeeded() {
-        calculationNeeded = lazyRecomputing ? Math.min(calculationNeeded + 1, MAX_REDRAW_NEEDED) : 1;
+        synchronized (key) {
+            calculationNeeded = lazyRecomputing ?
+                Math.min(calculationNeeded + 1, MAX_REDRAW_NEEDED) : 1;
+        }
+    }
+
+    public final void updateNeeded(int updatesNeeded) {
+        synchronized (key) {
+            calculationNeeded = lazyRecomputing ?
+                Math.min(calculationNeeded + updatesNeeded, MAX_REDRAW_NEEDED) : 1;
+        }
+    }
+
+    protected final int calculationNeeded() {
+        synchronized (key) {
+            return calculationNeeded;
+        }
     }
 }

@@ -456,7 +456,7 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     @Override public void prepareParameters() {
-        if (lazyRecomputing && calculationNeeded == 0) {
+        if (lazyRecomputing && calculationNeeded() == 0) {
             return;
         }
         preComputedAngles.setValue(anglesValueRunnable);
@@ -487,7 +487,7 @@ public class D3Arc<T> extends D3Drawable {
 
     public D3Arc<T> optimize(boolean optimize) {
         this.optimize = optimize;
-        updateNeeded();
+        updateNeeded(2);
         return this;
     }
 

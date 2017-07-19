@@ -144,7 +144,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
             drawable.preDraw(canvas);
             drawable.draw(canvas);
             drawable.postDraw(canvas);
-            needRedraw = needRedraw || drawable.calculationNeeded > 0;
+            needRedraw = needRedraw || drawable.calculationNeeded() > 0;
         }
         for (final Action action : afterDrawActions) {
             handler.post(new Runnable() {
