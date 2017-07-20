@@ -1,134 +1,180 @@
 package com.applidium.pierreferrand.d3_android;
 
-import android.animation.ValueAnimator;
 import android.app.Activity;
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.Log;
-import android.view.animation.LinearInterpolator;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.D3View;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
-import com.applidium.pierreferrand.d3library.action.OnScrollAction;
-import com.applidium.pierreferrand.d3library.action.ScrollDirection;
-import com.applidium.pierreferrand.d3library.arc.D3Arc;
+import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
+import com.applidium.pierreferrand.d3library.axes.D3Axis;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
-import com.applidium.pierreferrand.d3library.helper.ArrayConverterHelper;
+import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
+import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.line.D3Line;
+import com.applidium.pierreferrand.d3library.scale.D3Converter;
+
+import net.danlew.android.joda.JodaTimeAndroid;
+
+import org.joda.time.DateTime;
 
 public class MainActivity extends Activity {
+
     D3View view;
-    private Float innerRadius = 0F;
+    D3Axis<Float> leftAxis;
+    D3Axis<Float> timeAxis;
+    D3Line<LightData> lightCurve;
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
 
+        JodaTimeAndroid.init(this);
+
         view = (D3View) findViewById(R.id.test);
-        int size = 40;
-        Float[] test = new Float[size];
-        float[] test2 = new float[size];
-        for (int i = 0; i < test.length; i++) {
-            test[i] = (float) i + 1;
+
+        leftAxis =
+            new D3Axis<Float>(AxisOrientation.RIGHT)
+                .offsetX(new D3FloatFunction() {
+                    @Override public float getFloat() {
+                        return view.getWidth() * 0.05f;
+                    }
+                })
+                .converter(new D3Converter<Float>() {
+                    @Override public float convert(Float toConvert) {
+                        return toConvert;
+                    }
+
+                    @Override public Float invert(float toInvert) {
+                        return toInvert;
+                    }
+                })
+                .domain(new Float[]{25f, 730f})
+                .range(new D3RangeFunction() {
+                    @Override public float[] getRange() {
+                        return new float[]{view.getHeight() * 0.8f, view.getHeight() * 0.1f};
+                    }
+                });
+
+        timeAxis =
+            new D3Axis<Float>(AxisOrientation.TOP)
+                .domain(new Float[]{1f, 14f,})
+                .range(new D3RangeFunction() {
+                    @Override public float[] getRange() {
+                        return new float[]{0.05f * view.getWidth(), 0.95f * view.getWidth()};
+                    }
+                }).converter(new D3Converter<Float>() {
+                @Override public float convert(Float toConvert) {
+                    return toConvert;
+                }
+
+                @Override public Float invert(float toInvert) {
+                    return toInvert;
+                }
+            }).offsetY(new D3FloatFunction() {
+                @Override public float getFloat() {
+                    return (float) (view.getHeight() * 0.98);
+                }
+            });
+
+        Paint lightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        lightPaint.setColor(0XFF00F0F0);
+        lightPaint.setStrokeWidth(12f);
+        lightPaint.setStyle(Paint.Style.STROKE);
+
+        LightData[] lightData = new LightData[500];
+        for (int i = 0; i < lightData.length; i++) {
+            lightData[i] = new LightData(i, (float) Math.random() * 400f + 125f);
         }
-        final ValueAnimator animator = ValueAnimator.ofFloat(0F, 360F);
-        animator.setRepeatMode(ValueAnimator.RESTART);
-        animator.setRepeatCount(ValueAnimator.INFINITE);
-        animator.setInterpolator(new LinearInterpolator());
-        animator.setDuration(10000);
-        animator.start();
-
-        final D3Arc<Float> arc = new D3Arc<>(test)
-            .weights(ArrayConverterHelper.convertArray(test, test2))
-            .innerRadius(new D3FloatFunction() {
-                @Override public float getFloat() {
-                    return innerRadius;
-                }
-            })
-            .offsetX(new D3FloatFunction() {
-                @Override public float getFloat() {
-                    return view.getHeight() <= view.getWidth() ?
-                        (view.getWidth() - view.getHeight()) / 2f : 0f;
-                }
-            })
-            .offsetY(new D3FloatFunction() {
-                @Override public float getFloat() {
-                    return view.getHeight() <= view.getWidth() ? 0f :
-                        (view.getHeight() - view.getWidth()) / 2f;
-                }
-            })
-            .padAngle(0);
-        arc
-            .onClickAction(
-                new OnClickAction() {
-                    boolean lazyRecomputing = false;
-
-                    @Override public void onClick(float X, float Y) {
-                        Log.v("DebugTest", "Click");
-                        lazyRecomputing = !lazyRecomputing;
-                        arc.lazyRecomputing(lazyRecomputing);
+        lightCurve =
+            new D3Line<>(lightData)
+                .x(new D3DataMapperFunction<LightData>() {
+                    @Override
+                    public float compute(LightData object, int position, LightData[] data) {
+                        return timeAxis.scale().value(object.test);
                     }
-                }
-            )
-            .onScrollAction(new OnScrollAction() {
-                float optimize = -1;
-
-                @Override public void onScroll(
-                    ScrollDirection direction,
-                    float coordinateX,
-                    float coordinateY,
-                    float dX,
-                    float dY
-                ) {
-                    if (dX * optimize < 0) {
-                        if (dX < 0) {
-                            arc.optimize(false);
-                        } else {
-                            arc.optimize(true);
+                })
+                .y(new D3DataMapperFunction<LightData>() {
+                    @Override
+                    public float compute(LightData object, int position, LightData[] data) {
+                        return leftAxis.scale().value(object.value);
+                    }
+                }).paint(lightPaint)
+                .setClipRect(
+                    new D3FloatFunction() {
+                        @Override public float getFloat() {
+                            return view.getWidth() * 0.05f;
                         }
-                        optimize = dX;
+                    },
+                    new D3FloatFunction() {
+                        @Override public float getFloat() {
+                            return 0;
+                        }
+                    },
+                    new D3FloatFunction() {
+                        @Override public float getFloat() {
+                            return view.getWidth();
+
+                        }
+                    },
+                    new D3FloatFunction() {
+                        @Override public float getFloat() {
+                            return (float) (view.getHeight() * 0.98);
+                        }
                     }
-                }
-            })
-            .startAngle(new D3FloatFunction() {
-                @Override public float getFloat() {
-                    return (float) animator.getAnimatedValue();
-                }
-            })
-            .lazyRecomputing(false)
-            .labels(true);
-        view.afterDrawActions.add(new Runnable() {
-            int sign = -1;
+                )
+                .onClickAction(
+                    new OnClickAction() {
+                        boolean lazyRecomputing = true;
 
-            @Override public void run() {
-                innerRadius += sign;
-                if (innerRadius > Math.min(view.getHeight(), view.getWidth()) / 4 ||
-                    (innerRadius < Math.min(view.getHeight(), view.getWidth()) / 8)
-                        && (sign == -1)) {
-                    sign *= -1;
-                }
-            }
-        });
-        view.add(arc);
-        view.add(
-            new D3Drawable() {
-                @Override public void draw(@NonNull Canvas canvas) {
+                        @Override public void onClick(float X, float Y) {
+                            lazyRecomputing = !lazyRecomputing;
+                            lightCurve.lazyRecomputing(lazyRecomputing);
+                        }
+                    }
+                );
 
-                }
+        Paint temperaturePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        temperaturePaint.setColor(0XFFFF0000);
+        temperaturePaint.setStrokeWidth(12f);
+
+        view.add(timeAxis.ticks(10));
+        view.add(leftAxis.ticks(10));
+        view.add(lightCurve);
+        view.add(new D3Drawable() {
+            @Override public void draw(@NonNull Canvas canvas) {
             }
-                .lazyRecomputing(false)
-        );
+        }.lazyRecomputing(false));
+        view.setMinimumTimePerFrame(17);
     }
 
-    @Override protected void onResume() {
-        super.onResume();
-        view.onResume();
+    private static class LightData {
+        DateTime date;
+        Float value;
+        float test;
+
+        LightData(int sec, float value) {
+            date = new DateTime()
+                .withHourOfDay(11)
+                .withMinuteOfHour(17 + sec / 60)
+                .withSecondOfMinute(sec % 60);
+            test = sec;
+            this.value = value;
+        }
     }
 
     @Override protected void onPause() {
         super.onPause();
         view.onPause();
+    }
+
+    @Override protected void onResume() {
+        super.onResume();
+        view.onResume();
     }
 }
