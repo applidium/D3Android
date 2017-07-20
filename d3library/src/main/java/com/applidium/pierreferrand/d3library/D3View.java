@@ -25,6 +25,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
      * into a scroll action when the user moves a little his finger.
      */
     private static final int DEFAULT_CLICK_ACTIONS_NUMBER = 3;
+    private static final int MINIMUM_TIME = 16;
     private boolean mustRun = true;
     private boolean initialized;
     private boolean isSurfaceCreated;
@@ -33,6 +34,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private Object key = new Object();
 
     private boolean needRedraw = true;
+    private long lastDraw = System.currentTimeMillis();
 
     /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
@@ -129,6 +131,22 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
         }
     }
 
+    private void sleepIfNeeded() {
+        long now = System.currentTimeMillis();
+        long diff = now - lastDraw;
+        if (diff < MINIMUM_TIME) {
+            try {
+                Thread.sleep(MINIMUM_TIME - diff);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        if ((System.currentTimeMillis() - lastDraw) < MINIMUM_TIME) {
+            throw new IllegalStateException();
+        }
+        lastDraw = now;
+    }
+
     /**
      * This inner method should not be called.
      */
@@ -139,6 +157,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
             drawable.prepareParameters();
         }
         canvas.drawRGB(255, 255, 255);
+        sleepIfNeeded();
         for (D3Drawable drawable : drawables) {
             drawable.preDraw(canvas);
             drawable.draw(canvas);
