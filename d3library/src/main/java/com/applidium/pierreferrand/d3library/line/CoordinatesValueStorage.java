@@ -16,12 +16,17 @@ public class CoordinatesValueStorage<T> extends ValueRunnable<float[]> {
 
     @NonNull private final D3Line<T> line;
     @NonNull private final List<Callable<Object>> tasks;
+    @NonNull private final List<ComputeValueRunnable> runnables;
 
     @Nullable private D3DataMapperFunction<T> mapper;
 
     CoordinatesValueStorage(@NonNull D3Line<T> line) {
         this.line = line;
         tasks = new ArrayList<>();
+        runnables = new ArrayList<>();
+        for (int i = 0; i < ThreadPool.CORES_NUMBER; i++) {
+            runnables.add(new ComputeValueRunnable(i));
+        }
     }
 
     void setDataLength(int length) {
@@ -42,27 +47,26 @@ public class CoordinatesValueStorage<T> extends ValueRunnable<float[]> {
         }
         tasks.clear();
         for (int k = 0; k < ThreadPool.CORES_NUMBER; k++) {
-            buildTask(mapper, k);
+            tasks.add(Executors.callable(runnables.get(k)));
         }
         ThreadPool.execute(tasks);
         return value;
     }
 
-    private void buildTask(
-        @NonNull final D3DataMapperFunction<T> mapper,
-        final int k
-    ) {
-        tasks.add(Executors.callable(
-            new Runnable() {
-                @Override public void run() {
-                    if (line.data == null) {
-                        throw new IllegalStateException(DATA_ERROR);
-                    }
-                    for (int i = k; i < value.length; i += ThreadPool.CORES_NUMBER) {
-                        value[i] = mapper.compute(line.data[i], i, line.data);
-                    }
-                }
+    private class ComputeValueRunnable implements Runnable {
+        int k;
+
+        public ComputeValueRunnable(int offset) {
+            k = offset;
+        }
+
+        @Override public void run() {
+            if (line.data == null) {
+                throw new IllegalStateException(DATA_ERROR);
             }
-        ));
+            for (int i = k; i < value.length; i += ThreadPool.CORES_NUMBER) {
+                value[i] = mapper.compute(line.data[i], i, line.data);
+            }
+        }
     }
 }
