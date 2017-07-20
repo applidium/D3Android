@@ -36,6 +36,10 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private boolean needRedraw = true;
     private long lastDraw = System.currentTimeMillis();
 
+    private float[] maxDifferenceAbsolute = new float[10];
+    private float[] differenceX = new float[10];
+    private float[] differenceY = new float[10];
+
     /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
      * can modify the UI.
@@ -227,9 +231,11 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     }
 
     private void handlePinchMovement(@NonNull MotionEvent event) {
-        float[] maxDifferenceAbsolute = new float[event.getPointerCount()];
-        float[] differenceX = new float[event.getPointerCount()];
-        float[] differenceY = new float[event.getPointerCount()];
+        if (event.getPointerCount() > maxDifferenceAbsolute.length) {
+            maxDifferenceAbsolute = new float[2 * event.getPointerCount()];
+            differenceX = new float[2 * event.getPointerCount()];
+            differenceY = new float[2 * event.getPointerCount()];
+        }
 
         int histLength = event.getHistorySize();
         computeDifferences(event, maxDifferenceAbsolute, differenceX, differenceY);
@@ -257,7 +263,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
         @NonNull float[] differenceY
     ) {
         int historySize = event.getHistorySize();
-        for (int i = 0; i < maxDifferenceAbsolute.length; i++) {
+        for (int i = 0; i < event.getPointerCount(); i++) {
             differenceX[i] = event.getX(i) - event.getHistoricalX(i, historySize - 1);
             differenceY[i] = event.getY(i) - event.getHistoricalY(i, historySize - 1);
             maxDifferenceAbsolute[i] = Math.max(Math.abs(differenceX[i]), Math.abs(differenceY[i]));

@@ -36,6 +36,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     float innerTickSize = DEFAULT_TICK_SIZE;
     float outerTickSize = DEFAULT_TICK_SIZE;
     int ticksNumber;
+    String[] ticksLegend;
 
     @NonNull final AxisOrientation orientation;
     @NonNull D3Scale<T> scale;
@@ -232,6 +233,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     public D3Axis<T> ticks(int ticksNumber) {
         ticks = null;
         this.ticksNumber = ticksNumber;
+        ticksLegend = new String[ticksNumber];
         return this;
     }
 
@@ -239,8 +241,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
      * Resets ticks : default Scale ticks will be used.
      */
     public D3Axis<T> tickValues() {
-        ticks = null;
-        ticksNumber = DEFAULT_TICK_NUMBER;
+        ticks(DEFAULT_TICK_NUMBER);
         return this;
     }
 

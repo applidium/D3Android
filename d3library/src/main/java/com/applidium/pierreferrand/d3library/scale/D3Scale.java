@@ -13,6 +13,7 @@ public class D3Scale<T> {
 
     @Nullable private D3RangeFunction<T> domain;
     private float[] domainArray;
+    private Float[] domainFloatArray;
     @Nullable private D3RangeFunction<Float> range;
     private float[] rangeArray;
 
@@ -70,6 +71,7 @@ public class D3Scale<T> {
     public D3Scale<T> domain(@Nullable D3RangeFunction<T> domain) {
         this.domain = domain;
         domainArray = new float[domain.getRange().length];
+        domainFloatArray = new Float[domainArray.length];
         return this;
     }
 
@@ -89,17 +91,16 @@ public class D3Scale<T> {
 
     @Nullable private Float[] domainFloatValue() {
         if (domain == null) {
-            return null;
+            return domainFloatArray;
         }
         if (converter == null) {
             throw new IllegalStateException(CONVERTER_ERROR);
         }
         T[] computedDomain = domain.getRange();
-        Float[] result = new Float[computedDomain.length];
         for (int i = 0; i < computedDomain.length; i++) {
-            result[i] = converter.convert(computedDomain[i]);
+            domainFloatArray[i] = converter.convert(computedDomain[i]);
         }
-        return result;
+        return domainFloatArray;
     }
 
     /**
@@ -184,7 +185,6 @@ public class D3Scale<T> {
      * Returns the converter.
      */
     @Nullable public D3Converter<T> converter() {
-        ticks();
         return converter;
     }
 
@@ -196,38 +196,37 @@ public class D3Scale<T> {
     }
 
     /**
-     * See {@link #ticks(int)}. Uses {@link #DEFAULT_TICK_NUMBER}.
+     * See {@link #ticks(int, float[])}. Uses {@link #DEFAULT_TICK_NUMBER}.
      */
-    public float[] ticks() {
-        return ticks(DEFAULT_TICK_NUMBER);
+    public float[] ticks(float[] result) {
+        return ticks(DEFAULT_TICK_NUMBER, result);
     }
 
     /**
      * Returns uniformly spaced float domain values.
      */
-    public float[] ticks(int count) {
+    public float[] ticks(int count, float[] result) {
         if (domain == null) {
             throw new IllegalStateException(DOMAIN_ERROR);
         }
         float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue(), domainArray);
-        float[] ticks = new float[count];
         if (count == 1) {
-            ticks[0] = (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2;
-            return ticks;
+            result[0] = (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2;
+            return result;
         }
 
         for (int i = 0; i < count; i++) {
-            ticks[i] = i * computedDomain[computedDomain.length - 1] / (count - 1)
+            result[i] = i * computedDomain[computedDomain.length - 1] / (count - 1)
                 + (count - 1 - i) * computedDomain[0] / (count - 1);
         }
 
-        return ticks;
+        return result;
     }
 
     /**
      * Returns the labels of uniformly spaced float domain values.
      */
-    public String[] ticksLegend(int count) {
+    public String[] ticksLegend(int count, String[] result) {
         if (domain == null) {
             throw new IllegalStateException(DOMAIN_ERROR);
         }
@@ -235,25 +234,24 @@ public class D3Scale<T> {
             throw new IllegalStateException(CONVERTER_ERROR);
         }
         float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue(), domainArray);
-        String[] legends = new String[count];
 
         if (count == 1) {
-            legends[0] = converter.invert(
+            result[0] = converter.invert(
                 (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2
             ).toString();
-            return legends;
+            return result;
         }
 
         for (int i = 1; i < count - 1; i++) {
-            legends[i] = converter
+            result[i] = converter
                 .invert(i * computedDomain[computedDomain.length - 1] / (count - 1)
                             + (count - 1 - i) * computedDomain[0] / (count - 1))
                 .toString();
         }
         T[] domainValues = domain();
-        legends[0] = domainValues[0].toString();
-        legends[count - 1] = domainValues[computedDomain.length - 1].toString();
+        result[0] = domainValues[0].toString();
+        result[count - 1] = domainValues[computedDomain.length - 1].toString();
 
-        return legends;
+        return result;
     }
 }

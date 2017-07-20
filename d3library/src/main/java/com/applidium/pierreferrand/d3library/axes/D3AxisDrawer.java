@@ -109,7 +109,7 @@ final class D3AxisDrawer<T> {
     private void drawVerticalLegend(@NonNull Canvas canvas) {
         float computedOffsetX = axis.offsetX.getFloat();
         String[] usableTicks = axis.ticks == null ?
-            axis.scale.ticksLegend(axis.ticksNumber) : axis.ticks;
+            axis.scale.ticksLegend(axis.ticksNumber, axis.ticksLegend) : axis.ticks;
         float coordinateX = axis.orientation == AxisOrientation.LEFT ?
             computedOffsetX - axis.innerTickSize : computedOffsetX + axis.innerTickSize;
         coordinateX += axis.legendProperties.offsetX();
@@ -147,7 +147,7 @@ final class D3AxisDrawer<T> {
     private void drawHorizontalLegend(@NonNull Canvas canvas) {
         float computedOffsetY = axis.offsetY.getFloat();
         String[] usableTicks = axis.ticks == null ?
-            axis.scale.ticksLegend(axis.ticksNumber) : axis.ticks;
+            axis.scale.ticksLegend(axis.ticksNumber, axis.ticksLegend) : axis.ticks;
         float coordinateY = axis.orientation == AxisOrientation.TOP ?
             computedOffsetY - axis.innerTickSize : computedOffsetY + axis.innerTickSize;
         coordinateY += axis.legendProperties.offsetY();
