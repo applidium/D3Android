@@ -12,7 +12,6 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.threading.ThreadPool;
@@ -44,7 +43,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private int clickTracker;
 
     @NonNull private final List<D3Drawable> drawables;
-    @NonNull public final List<Action> afterDrawActions;
+    @NonNull public final List<Runnable> afterDrawActions;
 
 
     public D3View(Context context, @Nullable AttributeSet attrs) {
@@ -146,12 +145,8 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
             drawable.postDraw(canvas);
             needRedraw = needRedraw || drawable.calculationNeeded() > 0;
         }
-        for (final Action action : afterDrawActions) {
-            handler.post(new Runnable() {
-                @Override public void run() {
-                    action.execute();
-                }
-            });
+        for (Runnable action : afterDrawActions) {
+            handler.post(action);
         }
     }
 

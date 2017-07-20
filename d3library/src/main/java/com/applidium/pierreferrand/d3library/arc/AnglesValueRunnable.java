@@ -14,6 +14,8 @@ public class AnglesValueRunnable<T> extends ValueRunnable<Angles> {
     private static final String DATA_ERROR = "Data should not be null.";
     private static final String SUM_WEIGHT_ERROR = "Sum of weight must be different from 0";
     private static final float CIRCLE_ANGLE = 360F;
+    private final FirstHalfAnglesRunnable firstHalfAnglesRunnable;
+    private final LastHalfAnglesRunnable lastHalfAnglesRunnable;
 
     @NonNull private final D3Arc<T> arc;
     @NonNull private final List<Callable<Object>> tasks;
@@ -21,6 +23,8 @@ public class AnglesValueRunnable<T> extends ValueRunnable<Angles> {
     public AnglesValueRunnable(@NonNull D3Arc<T> arc) {
         this.arc = arc;
         tasks = new ArrayList<>();
+        firstHalfAnglesRunnable = new FirstHalfAnglesRunnable();
+        lastHalfAnglesRunnable = new LastHalfAnglesRunnable();
     }
 
     void setDataLength(int length) {
@@ -45,77 +49,87 @@ public class AnglesValueRunnable<T> extends ValueRunnable<Angles> {
         }
 
         tasks.clear();
-        tasks.add(Executors.callable(
-            buildFirstHalfAnglesTask(computedWeights, value, totalWeight)
-        ));
-        tasks.add(Executors.callable(
-            buildLastHalfAnglesTask(computedWeights, value, totalWeight)
-        ));
+        firstHalfAnglesRunnable.setParameters(computedWeights, value, totalWeight);
+        tasks.add(Executors.callable(firstHalfAnglesRunnable));
+        lastHalfAnglesRunnable.setParameters(computedWeights, value, totalWeight);
+        tasks.add(Executors.callable(lastHalfAnglesRunnable));
         ThreadPool.executeOnSecondaryPool(tasks);
         return value;
     }
 
-    @NonNull private Runnable buildFirstHalfAnglesTask(
-        final float[] computedWeights,
-        final Angles angles,
-        final float finalTotalWeight
-    ) {
-        return new Runnable() {
-            @Override public void run() {
-                if (arc.data == null) {
-                    throw new IllegalStateException(DATA_ERROR);
-                }
+    private class FirstHalfAnglesRunnable implements Runnable {
+        private float[] computedWeights;
+        private Angles angles;
+        private float totalWeight;
 
-                angles.startAngles[0] = (arc.startAngle.getFloat()) % CIRCLE_ANGLE;
-                if (angles.startAngles[0] < 0.0F) {
-                    angles.startAngles[0] += CIRCLE_ANGLE;
-                }
-                angles.drawAngles[0] = (CIRCLE_ANGLE - arc.data.length * arc.padAngle)
-                    * computedWeights[0] / finalTotalWeight;
-                for (int i = 1; i < arc.data.length / 2; i++) {
-                    angles.startAngles[i] = (angles.startAngles[i - 1] + angles.drawAngles[i - 1]
-                        + arc.padAngle) % CIRCLE_ANGLE;
-                    if (angles.startAngles[i] < 0.0F) {
-                        angles.startAngles[i] += CIRCLE_ANGLE;
-                    }
-                    angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * arc.padAngle) *
-                        computedWeights[i] / finalTotalWeight;
-                }
+        private void setParameters(
+            float[] computedWeights, Angles angles, float totalWeight
+        ) {
+            this.computedWeights = computedWeights;
+            this.angles = angles;
+            this.totalWeight = totalWeight;
+        }
+
+        @Override public void run() {
+            if (arc.data == null) {
+                throw new IllegalStateException(DATA_ERROR);
             }
-        };
+
+            angles.startAngles[0] = (arc.startAngle.getFloat()) % CIRCLE_ANGLE;
+            if (angles.startAngles[0] < 0.0F) {
+                angles.startAngles[0] += CIRCLE_ANGLE;
+            }
+            angles.drawAngles[0] = (CIRCLE_ANGLE - arc.data.length * arc.padAngle)
+                * computedWeights[0] / totalWeight;
+            for (int i = 1; i < arc.data.length / 2; i++) {
+                angles.startAngles[i] = (angles.startAngles[i - 1] + angles.drawAngles[i - 1]
+                    + arc.padAngle) % CIRCLE_ANGLE;
+                if (angles.startAngles[i] < 0.0F) {
+                    angles.startAngles[i] += CIRCLE_ANGLE;
+                }
+                angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * arc.padAngle) *
+                    computedWeights[i] / totalWeight;
+            }
+        }
     }
 
-    @NonNull private Runnable buildLastHalfAnglesTask(
-        final float[] computedWeights,
-        final Angles angles,
-        final float finalTotalWeight
-    ) {
-        return new Runnable() {
-            @Override public void run() {
-                if (arc.data == null) {
-                    throw new IllegalStateException(DATA_ERROR);
-                }
+    private class LastHalfAnglesRunnable implements Runnable {
+        private float[] computedWeights;
+        private Angles angles;
+        private float totalWeight;
 
-                angles.drawAngles[arc.data.length - 1] = (CIRCLE_ANGLE - arc.data.length * arc
-                    .padAngle)
-                    * computedWeights[arc.data.length - 1] / finalTotalWeight;
-                angles.startAngles[arc.data.length - 1] = (arc.startAngle.getFloat() - arc
-                    .padAngle -
-                    angles.drawAngles[arc.data.length - 1]) % CIRCLE_ANGLE;
-                if (angles.startAngles[0] < 0.0F) {
-                    angles.startAngles[0] += CIRCLE_ANGLE;
-                }
-                for (int i = arc.data.length - 2; i >= arc.data.length / 2; i--) {
-                    angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * arc.padAngle) *
-                        computedWeights[i] / finalTotalWeight;
+        private void setParameters(
+            float[] computedWeights, Angles angles, float totalWeight
+        ) {
+            this.computedWeights = computedWeights;
+            this.angles = angles;
+            this.totalWeight = totalWeight;
+        }
 
-                    angles.startAngles[i] = (angles.startAngles[i + 1] - angles.drawAngles[i]
-                        - arc.padAngle) % CIRCLE_ANGLE;
-                    if (angles.startAngles[i] < 0.0F) {
-                        angles.startAngles[i] += CIRCLE_ANGLE;
-                    }
+        @Override public void run() {
+            if (arc.data == null) {
+                throw new IllegalStateException(DATA_ERROR);
+            }
+
+            angles.drawAngles[arc.data.length - 1] = (CIRCLE_ANGLE - arc.data.length * arc
+                .padAngle)
+                * computedWeights[arc.data.length - 1] / totalWeight;
+            angles.startAngles[arc.data.length - 1] = (arc.startAngle.getFloat() - arc
+                .padAngle -
+                angles.drawAngles[arc.data.length - 1]) % CIRCLE_ANGLE;
+            if (angles.startAngles[0] < 0.0F) {
+                angles.startAngles[0] += CIRCLE_ANGLE;
+            }
+            for (int i = arc.data.length - 2; i >= arc.data.length / 2; i--) {
+                angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * arc.padAngle) *
+                    computedWeights[i] / totalWeight;
+
+                angles.startAngles[i] = (angles.startAngles[i + 1] - angles.drawAngles[i]
+                    - arc.padAngle) % CIRCLE_ANGLE;
+                if (angles.startAngles[i] < 0.0F) {
+                    angles.startAngles[i] += CIRCLE_ANGLE;
                 }
             }
-        };
+        }
     }
 }
