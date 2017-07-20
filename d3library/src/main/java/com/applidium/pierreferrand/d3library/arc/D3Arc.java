@@ -27,14 +27,23 @@ public class D3Arc<T> extends D3Drawable {
 
     @NonNull int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
 
-    @Nullable private D3FloatFunction outerRadius;
-    @Nullable private D3FloatFunction innerRadius;
+    @Nullable D3FloatFunction outerRadius;
+    @Nullable D3FloatFunction innerRadius;
+
+    @NonNull final ValueStorage<Float> computedInnerRadius;
+    @NonNull final ValueStorage<Float> computedOuterRadius;
+    @NonNull final ValueStorage<Float> computedOffsetX;
+    @NonNull final ValueStorage<Float> computedOffsetY;
+    @NonNull private final OuterRadiusValueRunnable outerRadiusValueRunnable;
+    @NonNull private final InnerRadiusValueRunnable innerRadiusValueRunnable;
+    @NonNull private final OffsetXValueRunnable offsetXValueRunnable;
+    @NonNull private final OffsetYValueRunnable offsetYValueRunnable;
 
     private boolean optimize = false;
     float padAngle;
 
-    @NonNull private D3FloatFunction offsetX;
-    @NonNull private D3FloatFunction offsetY;
+    @NonNull D3FloatFunction offsetX;
+    @NonNull D3FloatFunction offsetY;
     @NonNull D3FloatFunction startAngle;
     @NonNull final ValueStorage<Angles> preComputedAngles;
     @NonNull private final ValueStorage<Bitmap> preComputedArc;
@@ -61,9 +70,18 @@ public class D3Arc<T> extends D3Drawable {
         preComputedAngles = new ValueStorage<>();
         preComputedArc = new ValueStorage<>();
         preComputedLabels = new ValueStorage<>();
+        computedInnerRadius = new ValueStorage<>();
+        computedOuterRadius = new ValueStorage<>();
+        computedOffsetX = new ValueStorage<>();
+        computedOffsetY = new ValueStorage<>();
+
         bitmapValueRunnable = new BitmapValueRunnable<>(this);
         labelsValueRunnable = new LabelsValueRunnable<>(this, textPaint);
         anglesValueRunnable = new AnglesValueRunnable<>(this);
+        innerRadiusValueRunnable = new InnerRadiusValueRunnable(this);
+        outerRadiusValueRunnable = new OuterRadiusValueRunnable(this);
+        offsetXValueRunnable = new OffsetXValueRunnable(this);
+        offsetYValueRunnable = new OffsetYValueRunnable(this);
 
         if (data != null) {
             data(data);
@@ -105,7 +123,7 @@ public class D3Arc<T> extends D3Drawable {
         if (innerRadius == null) {
             throw new IllegalStateException(INNER_RADIUS_ERROR);
         }
-        return innerRadius.getFloat();
+        return computedInnerRadius.getValue();
     }
 
     /**
@@ -135,7 +153,7 @@ public class D3Arc<T> extends D3Drawable {
         if (outerRadius == null) {
             throw new IllegalStateException(OUTER_RADIUS_ERROR);
         }
-        return outerRadius.getFloat();
+        return computedOuterRadius.getValue();
     }
 
     /**
@@ -197,7 +215,7 @@ public class D3Arc<T> extends D3Drawable {
      * Returns the horizontal offset of the Arc.
      */
     public float offsetX() {
-        return offsetX.getFloat();
+        return computedOffsetX.getValue();
     }
 
     /**
@@ -224,7 +242,7 @@ public class D3Arc<T> extends D3Drawable {
      * Returns the vertical offset of the Arc.
      */
     public float offsetY() {
-        return offsetY.getFloat();
+        return computedOffsetY.getValue();
     }
 
     /**
@@ -459,6 +477,10 @@ public class D3Arc<T> extends D3Drawable {
         if (lazyRecomputing && calculationNeeded() == 0) {
             return;
         }
+        computedOffsetX.setValue(offsetXValueRunnable);
+        computedOffsetY.setValue(offsetYValueRunnable);
+        computedInnerRadius.setValue(innerRadiusValueRunnable);
+        computedOuterRadius.setValue(outerRadiusValueRunnable);
         preComputedAngles.setValue(anglesValueRunnable);
         preComputedLabels.setValue(labelsValueRunnable);
         if (!optimize) {
