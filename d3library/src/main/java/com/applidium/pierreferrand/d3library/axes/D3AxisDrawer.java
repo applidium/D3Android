@@ -70,10 +70,11 @@ final class D3AxisDrawer<T> {
         float outerX = computedOffsetX - axis.outerTickSize / 2;
         float innerX = computedOffsetX + axis.innerTickSize / 2;
         float coordinateY;
-        for (int i = 0; i < axis.ticksNumber; i++) {
+        int ticksNumber = axis.ticks();
+        for (int i = 0; i < ticksNumber; i++) {
             coordinateY = computedOffsetY
-                + axis.lastBoundRange() * i / (axis.ticksNumber - 1F)
-                + axis.firstBoundRange() * (axis.ticksNumber - i - 1F) / (axis.ticksNumber - 1F);
+                + axis.lastBoundRange() * i / (ticksNumber - 1F)
+                + axis.firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
             path.moveTo(outerX, coordinateY);
             path.lineTo(innerX, coordinateY);
         }
@@ -85,10 +86,11 @@ final class D3AxisDrawer<T> {
         float outerY = computedOffsetY + axis.outerTickSize / 2;
         float innerY = computedOffsetY - axis.innerTickSize / 2;
         float coordinateX;
-        for (int i = 0; i < axis.ticksNumber; i++) {
+        int ticksNumber = axis.ticks();
+        for (int i = 0; i < ticksNumber; i++) {
             coordinateX = computedOffsetX
-                + axis.lastBoundRange() * i / (axis.ticksNumber - 1F)
-                + axis.firstBoundRange() * (axis.ticksNumber - i - 1F) / (axis.ticksNumber - 1F);
+                + axis.lastBoundRange() * i / (ticksNumber - 1F)
+                + axis.firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
             path.moveTo(coordinateX, innerY);
             path.lineTo(coordinateX, outerY);
         }
@@ -108,8 +110,7 @@ final class D3AxisDrawer<T> {
 
     private void drawVerticalLegend(@NonNull Canvas canvas) {
         float computedOffsetX = axis.offsetX.getFloat();
-        String[] usableTicks = axis.ticks == null ?
-            axis.scale.ticksLegend(axis.ticksNumber, axis.ticksLegend) : axis.ticks;
+        String[] usableTicks = axis.ticksLegend.getValue();
         float coordinateX = axis.orientation == AxisOrientation.LEFT ?
             computedOffsetX - axis.innerTickSize : computedOffsetX + axis.innerTickSize;
         coordinateX += axis.legendProperties.offsetX();
@@ -123,8 +124,9 @@ final class D3AxisDrawer<T> {
         @NonNull Canvas canvas, @NonNull String tick, float coordinateX, int i
     ) {
         float computedOffsetY = axis.offsetY.getFloat();
-        float coordinateY = computedOffsetY + axis.lastBoundRange() * i / (axis.ticksNumber - 1F)
-            + axis.firstBoundRange() * (axis.ticksNumber - i - 1F) / (axis.ticksNumber - 1F);
+        int ticksNumber = axis.ticks();
+        float coordinateY = computedOffsetY + axis.lastBoundRange() * i / (ticksNumber - 1F)
+            + axis.firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
         coordinateY += axis.legendProperties.offsetY();
         coordinateY += alignmentVerticalOffset(tick);
         float realCoordinateX = coordinateX - (axis.orientation == AxisOrientation.LEFT ?
@@ -146,8 +148,7 @@ final class D3AxisDrawer<T> {
 
     private void drawHorizontalLegend(@NonNull Canvas canvas) {
         float computedOffsetY = axis.offsetY.getFloat();
-        String[] usableTicks = axis.ticks == null ?
-            axis.scale.ticksLegend(axis.ticksNumber, axis.ticksLegend) : axis.ticks;
+        String[] usableTicks = axis.ticksLegend.getValue();
         float coordinateY = axis.orientation == AxisOrientation.TOP ?
             computedOffsetY - axis.innerTickSize : computedOffsetY + axis.innerTickSize;
         coordinateY += axis.legendProperties.offsetY();
@@ -164,8 +165,9 @@ final class D3AxisDrawer<T> {
         int i
     ) {
         float computedOffsetX = axis.offsetX.getFloat();
-        float coordinateX = computedOffsetX + axis.lastBoundRange() * i / (axis.ticksNumber - 1F)
-            + axis.firstBoundRange() * (axis.ticksNumber - i - 1F) / (axis.ticksNumber - 1F);
+        int ticksNumber = axis.ticks();
+        float coordinateX = computedOffsetX + axis.lastBoundRange() * i / (ticksNumber - 1F)
+            + axis.firstBoundRange() * (ticksNumber - i - 1F) / (ticksNumber - 1F);
         coordinateX += axis.legendProperties.offsetX();
         coordinateX -= alignmentHorizontalOffset(ticks[i]);
         float realCoordinateY = coordinateY + (axis.orientation == AxisOrientation.TOP ? 0 :

@@ -31,17 +31,17 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
         new BitmapValueRunnable<>(drawer);
     @NonNull private final ValueStorage<Bitmap> bitmapValueStorage = new ValueStorage<>();
 
+    @NonNull final TicksValueRunnable<T> ticksValueRunnable = new TicksValueRunnable<>(this);
+    @NonNull final ValueStorage<String[]> ticksLegend = new ValueStorage<>();
+
     @NonNull D3FloatFunction offsetX;
     @NonNull D3FloatFunction offsetY;
     float innerTickSize = DEFAULT_TICK_SIZE;
     float outerTickSize = DEFAULT_TICK_SIZE;
-    int ticksNumber;
-    String[] ticksLegend;
 
     @NonNull final AxisOrientation orientation;
     @NonNull D3Scale<T> scale;
 
-    @Nullable String[] ticks;
     @NonNull Paint textPaint;
     @NonNull LegendProperties legendProperties;
 
@@ -224,16 +224,14 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
      * Returns the number of ticks for the Axis.
      */
     public int ticks() {
-        return ticksNumber;
+        return ticksValueRunnable.getTicksNumber();
     }
 
     /**
      * Sets the number of ticks for the Axis.
      */
     public D3Axis<T> ticks(int ticksNumber) {
-        ticks = null;
-        this.ticksNumber = ticksNumber;
-        ticksLegend = new String[ticksNumber];
+        ticksValueRunnable.setTicksNumber(ticksNumber);
         return this;
     }
 
@@ -249,11 +247,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
      * Sets the the ticks to use rather than default Scale ticks.
      */
     public D3Axis<T> tickValues(@NonNull String[] ticks) {
-        if (ticks.length < 2) {
-            throw new IllegalStateException("TickValue must have at least 2 values");
-        }
-        ticksNumber = ticks.length;
-        this.ticks = ticks.clone();
+        ticksValueRunnable.setCustomTicks(ticks);
         return this;
     }
 
@@ -496,6 +490,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
         if (!lazyRecomputing || calculationNeeded() != 1) {
             return;
         }
+        ticksLegend.setValue(ticksValueRunnable);
         bitmapValueStorage.setValue(bitmapValueRunnable);
     }
 
