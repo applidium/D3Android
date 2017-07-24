@@ -49,15 +49,15 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
         this.orientation = orientation;
         scale = new D3Scale<>();
         if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
-            scale.range(new D3RangeFunction<Float>() {
-                @Override public Float[] getRange() {
-                    return new Float[]{BEGINNING_PROPORTION * width(), END_PROPORTION * width()};
+            scale.range(new D3RangeFunction() {
+                @Override public float[] getRange() {
+                    return new float[]{BEGINNING_PROPORTION * width(), END_PROPORTION * width()};
                 }
             });
         } else {
-            scale.range(new D3RangeFunction<Float>() {
-                @Override public Float[] getRange() {
-                    return new Float[]{END_PROPORTION * height(), BEGINNING_PROPORTION * height()};
+            scale.range(new D3RangeFunction() {
+                @Override public float[] getRange() {
+                    return new float[]{END_PROPORTION * height(), BEGINNING_PROPORTION * height()};
                 }
             });
         }
@@ -121,7 +121,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     /**
      * Sets the domain of the associated scale.
      */
-    public D3Axis<T> domain(@NonNull D3RangeFunction<T> function) {
+    public D3Axis<T> domain(@NonNull D3DomainFunction<T> function) {
         scale.domain(function);
         return this;
     }
@@ -129,14 +129,14 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     /**
      * Returns the range of the associated scale.
      */
-    @Nullable Float[] range() {
+    @Nullable float[] range() {
         return scale.range();
     }
 
     /**
      * Sets the range of the associated scale.
      */
-    public D3Axis<T> range(Float[] range) {
+    public D3Axis<T> range(float[] range) {
         scale.range(range);
         return this;
     }
@@ -144,7 +144,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     /**
      * Sets the range of the associated scale.
      */
-    public D3Axis<T> range(@NonNull D3RangeFunction<Float> function) {
+    public D3Axis<T> range(@NonNull D3RangeFunction function) {
         scale.range(function);
         return this;
     }
@@ -334,7 +334,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
         if (scale.range() == null || scale.range().length == 0) {
             throw new IllegalStateException(RANGE_ERROR);
         }
-        Float[] range = scale.range();
+        float[] range = scale.range();
         return range[range.length - 1];
     }
 

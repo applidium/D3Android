@@ -34,7 +34,7 @@ final class D3AxisActionsInitializer<T> {
                     throw new IllegalStateException(DOMAIN_ERROR);
                 }
                 converter.convert(domain[0]);
-                Float[] range = axis.scale.range();
+                float[] range = axis.scale.range();
                 if (range == null) {
                     throw new IllegalStateException(RANGE_ERROR);
                 }
@@ -70,7 +70,7 @@ final class D3AxisActionsInitializer<T> {
             return;
         }
 
-        Float[] range = axis.range();
+        float[] range = axis.range();
 
         float coordinateMin = range[0];
         float coordinateMax = range[1];
@@ -122,7 +122,7 @@ final class D3AxisActionsInitializer<T> {
                 if (domain == null) {
                     throw new IllegalStateException(DOMAIN_ERROR);
                 }
-                Float[] range = axis.scale.range();
+                float[] range = axis.scale.range();
                 if (range == null) {
                     throw new IllegalStateException(RANGE_ERROR);
                 }
