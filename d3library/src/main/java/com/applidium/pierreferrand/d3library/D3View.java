@@ -25,13 +25,15 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
      * into a scroll action when the user moves a little his finger.
      */
     private static final int DEFAULT_CLICK_ACTIONS_NUMBER = 3;
-    private static final int MINIMUM_TIME = 16;
+    private static final int MINIMUM_TIME_PER_FRAME = 33;
+
+    private int minimumTimePerFrame = MINIMUM_TIME_PER_FRAME;
     private boolean mustRun = true;
     private boolean initialized;
     private boolean isSurfaceCreated;
     private final Object surfaceKey = new Object();
 
-    private Object key = new Object();
+    private final Object key = new Object();
 
     private boolean needRedraw = true;
     private long lastDraw = System.currentTimeMillis();
@@ -117,38 +119,53 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
                     e.printStackTrace();
                 }
             }
-            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+
+            for (D3Drawable drawable : drawables) {
+                drawable.prepareParameters();
+            }
+            sleepIfNeeded();
+            synchronized (surfaceKey) {
+                drawOnCorrectCanvas();
+            }
+        }
+    }
+
+    private void drawOnCorrectCanvas() {
+        if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+            if (!isSurfaceCreated) {
                 return;
             }
-            synchronized (surfaceKey) {
-                if (!isSurfaceCreated) {
-                    continue;
-                }
-                Surface surface = getHolder().getSurface();
-                Canvas c = surface.lockHardwareCanvas();
+            Canvas c = getHolder().lockCanvas();
 
-                if (c != null) {
-                    draw(c);
-                    getHolder().getSurface().unlockCanvasAndPost(c);
-                }
+            if (c != null) {
+                draw(c);
+                getHolder().unlockCanvasAndPost(c);
+            }
+        } else {
+            if (!isSurfaceCreated) {
+                return;
+            }
+            Surface surface = getHolder().getSurface();
+            Canvas c = surface.lockHardwareCanvas();
+
+            if (c != null) {
+                draw(c);
+                getHolder().getSurface().unlockCanvasAndPost(c);
             }
         }
     }
 
     private void sleepIfNeeded() {
-        long now = System.currentTimeMillis();
-        long diff = now - lastDraw;
-        if (diff < MINIMUM_TIME) {
+        long endingTime = lastDraw + minimumTimePerFrame;
+        long remainingTime = endingTime - System.currentTimeMillis();
+        while (remainingTime > 0) {
             try {
-                Thread.sleep(MINIMUM_TIME - diff);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+                Thread.sleep(remainingTime);
+            } catch (InterruptedException ignore) {
             }
+            remainingTime = endingTime - System.currentTimeMillis();
         }
-        if ((System.currentTimeMillis() - lastDraw) < MINIMUM_TIME) {
-            throw new IllegalStateException();
-        }
-        lastDraw = now;
+        lastDraw = System.currentTimeMillis();
     }
 
     /**
@@ -157,11 +174,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     @Override public void draw(Canvas canvas) {
         super.draw(canvas);
         needRedraw = false;
-        for (D3Drawable drawable : drawables) {
-            drawable.prepareParameters();
-        }
         canvas.drawRGB(255, 255, 255);
-        sleepIfNeeded();
         for (D3Drawable drawable : drawables) {
             drawable.preDraw(canvas);
             drawable.draw(canvas);
@@ -339,5 +352,9 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
             isSurfaceCreated = false;
         }
         onPause();
+    }
+
+    public void setMinimumTimePerFrame(int minimumTimePerFrame) {
+        this.minimumTimePerFrame = minimumTimePerFrame;
     }
 }
