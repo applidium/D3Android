@@ -225,4 +225,10 @@ public class D3StackBarChart<T> extends D3Drawable {
             barChart.draw(canvas);
         }
     }
+
+    @Override public void prepareParameters() {
+        for (int i = 0; i < barCharts.size(); i++) {
+            barCharts.get(i).prepareParameters();
+        }
+    }
 }
