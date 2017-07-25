@@ -49,7 +49,7 @@ public class CoordinatesValueStorage<T> extends ValueRunnable<float[]> {
         for (int k = 0; k < ThreadPool.CORES_NUMBER; k++) {
             tasks.add(Executors.callable(runnables.get(k)));
         }
-        ThreadPool.execute(tasks);
+        ThreadPool.executeOnSecondaryPool(tasks);
         return value;
     }
 

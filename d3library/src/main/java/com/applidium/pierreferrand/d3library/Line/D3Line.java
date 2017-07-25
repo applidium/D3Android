@@ -116,21 +116,23 @@ public class D3Line<T> extends D3Drawable {
         return data;
     }
 
+    protected void setDataStorageDataLength(int length) {
+        xValueStorage.setDataLength(length);
+        yValueStorage.setDataLength(length);
+    }
+
     /**
      * Sets the data used by the Line.
      */
     public D3Line<T> data(@Nullable T[] data) {
+        this.data = data;
         if (data == null) {
-            this.data = null;
-            xValueStorage.setDataLength(0);
-            yValueStorage.setDataLength(0);
+            setDataStorageDataLength(0);
             lines = new float[0];
             return this;
         }
-        xValueStorage.setDataLength(data.length);
-        yValueStorage.setDataLength(data.length);
+        setDataStorageDataLength(data.length);
         lines = new float[4 * (data.length - 1)];
-        this.data = data;
         return this;
     }
 
