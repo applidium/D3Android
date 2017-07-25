@@ -10,11 +10,11 @@ import android.support.annotation.Nullable;
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.D3View;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
-import com.applidium.pierreferrand.d3library.area.D3Area;
 import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
 import com.applidium.pierreferrand.d3library.axes.D3Axis;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
+import com.applidium.pierreferrand.d3library.curve.D3Curve;
 import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.line.D3Line;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
@@ -91,7 +91,6 @@ public class MainActivity extends Activity {
             });
 
         Paint lightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        lightPaint.setStyle(Paint.Style.STROKE);
         lightPaint.setColor(0XFF00F0F0);
         lightPaint.setStrokeWidth(12f);
 
@@ -100,7 +99,7 @@ public class MainActivity extends Activity {
             lightData[i] = new LightData(i, (float) Math.random() * 400f + 125f);
         }
         lightCurve =
-            new D3Area<>(lightData)
+            new D3Curve<>(lightData)
                 .x(new D3DataMapperFunction<LightData>() {
                     @Override
                     public float compute(LightData object, int position, LightData[] data) {
@@ -135,11 +134,7 @@ public class MainActivity extends Activity {
                             return (float) (view.getHeight() * 0.98);
                         }
                     }
-                ).ground(new D3FloatFunction() {
-                @Override public float getFloat() {
-                    return leftAxis.scale().value(100F);
-                }
-            });
+                );
 
         view.add(timeAxis);
         view.add(leftAxis);
@@ -161,7 +156,7 @@ public class MainActivity extends Activity {
 
     private static class LightData {
         DateTime date;
-        Float value;
+        float value;
         float test;
 
         LightData(int sec, float value) {
