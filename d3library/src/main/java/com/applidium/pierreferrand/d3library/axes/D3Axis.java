@@ -487,7 +487,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     }
 
     @Override public void prepareParameters() {
-        if (!lazyRecomputing || calculationNeeded() != 1) {
+        if (lazyRecomputing && calculationNeeded() == 0) {
             return;
         }
         ticksLegend.setValue(ticksValueRunnable);
