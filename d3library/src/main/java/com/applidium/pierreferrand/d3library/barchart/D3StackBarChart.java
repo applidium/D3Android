@@ -14,10 +14,10 @@ import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import java.util.ArrayList;
 import java.util.List;
 
+@SuppressWarnings({"unused", "unchecked"})
 public class D3StackBarChart<T> extends D3Drawable {
     private static final String DATA_WIDTH_ERROR = "DataWidth should not be null";
 
-    @NonNull private List<D3BarChart<T>> barCharts;
     @Nullable private D3FloatFunction dataWidth;
 
     public D3StackBarChart() {
@@ -38,9 +38,9 @@ public class D3StackBarChart<T> extends D3Drawable {
      * @param stackNumber Defines the number of stack for the StackBarChart
      */
     public D3StackBarChart<T> data(@NonNull T[] data, int stackNumber) {
-        barCharts = new ArrayList<>(stackNumber);
+        children = new ArrayList<>(stackNumber);
         for (int i = 0; i < stackNumber; i++) {
-            barCharts.add(new D3BarChart<>(data));
+            children.add(new D3BarChart<>(data));
         }
         return this;
     }
@@ -50,12 +50,12 @@ public class D3StackBarChart<T> extends D3Drawable {
      */
     public D3StackBarChart<T> data(@Nullable T[][] data) {
         if (data == null) {
-            barCharts = new ArrayList<>(0);
+            children = new ArrayList<>(0);
             return this;
         }
-        barCharts = new ArrayList<>();
+        children = new ArrayList<>();
         for (T[] tab : data) {
-            barCharts.add(new D3BarChart<>(tab));
+            children.add(new D3BarChart<>(tab));
         }
         return this;
     }
@@ -86,8 +86,8 @@ public class D3StackBarChart<T> extends D3Drawable {
      */
     public D3StackBarChart<T> dataWidth(@NonNull D3FloatFunction dataWidth) {
         this.dataWidth = dataWidth;
-        for (D3BarChart barChart : barCharts) {
-            barChart.dataWidth(dataWidth);
+        for (D3Drawable barChart : children) {
+            ((D3BarChart<T>) barChart).dataWidth(dataWidth);
         }
         return this;
     }
@@ -96,15 +96,15 @@ public class D3StackBarChart<T> extends D3Drawable {
      * Returns the horizontal coordinates of the middle of the bars.
      */
     public float[] x() {
-        return barCharts.get(0).x();
+        return  ((D3BarChart<T>) children.get(0)).x();
     }
 
     /**
      * Sets horizontal coordinates of the middle of the bars.
      */
     public D3StackBarChart<T> x(@NonNull D3DataMapperFunction<T> x) {
-        for (D3BarChart<T> barChart : barCharts) {
-            barChart.x(x);
+        for (D3Drawable barChart : children) {
+            ((D3BarChart<T>) barChart).x(x);
         }
         return this;
     }
@@ -113,7 +113,7 @@ public class D3StackBarChart<T> extends D3Drawable {
      * Returns the vertical coordinates of the bottom of the bars.
      */
     @NonNull public float[] y() {
-        return barCharts.get(0).y();
+        return ((D3BarChart<T>) children.get(0)).y();
     }
 
     /**
@@ -131,13 +131,13 @@ public class D3StackBarChart<T> extends D3Drawable {
      * Sets the vertical coordinates of the bottom of the bars.
      */
     public D3StackBarChart<T> y(@NonNull D3DataMapperFunction<T> y) {
-        barCharts.get(0).y(y);
-        for (int i = 1; i < barCharts.size(); i++) {
+        ((D3BarChart<T>) children.get(0)).y(y);
+        for (int i = 1; i < children.size(); i++) {
             final int finalI = i;
-            barCharts.get(i).y(new D3DataMapperFunction<T>() {
+            ((D3BarChart<T>) children.get(i)).y(new D3DataMapperFunction<T>() {
                 @Override public float compute(T object, int position, T[] data) {
-                    return barCharts.get(finalI - 1).y()[position]
-                        - barCharts.get(finalI - 1).dataHeight()[position];
+                    return ((D3BarChart<T>) children.get(finalI - 1)).y()[position]
+                        - ((D3BarChart<T>) children.get(finalI - 1)).dataHeight()[position];
                 }
             });
         }
@@ -150,7 +150,7 @@ public class D3StackBarChart<T> extends D3Drawable {
     public D3StackBarChart<T> dataHeight(@NonNull final float[][] dataHeight) {
         for (int i = 0; i < dataHeight.length; i++) {
             final int finalI = i;
-            barCharts.get(i).dataHeight(new D3DataMapperFunction<T>() {
+            ((D3BarChart<T>) children.get(i)).dataHeight(new D3DataMapperFunction<T>() {
                 private float[] heights = dataHeight[finalI];
 
                 @Override public float compute(T object, int position, T[] data) {
@@ -166,7 +166,7 @@ public class D3StackBarChart<T> extends D3Drawable {
      */
     public D3StackBarChart<T> dataHeight(@NonNull List<D3DataMapperFunction<T>> dataHeight) {
         for (int i = 0; i < dataHeight.size(); i++) {
-            barCharts.get(i).dataHeight(dataHeight.get(i));
+            ((D3BarChart<T>) children.get(i)).dataHeight(dataHeight.get(i));
         }
         return this;
     }
@@ -176,9 +176,9 @@ public class D3StackBarChart<T> extends D3Drawable {
      * stack if there are more data than colors, the colors are used circularly.
      */
     @NonNull public int[][] colors() {
-        int[][] result = new int[barCharts.size()][];
+        int[][] result = new int[children.size()][];
         for (int i = 0; i < result.length; i++) {
-            result[i] = barCharts.get(i).colors();
+            result[i] =  ((D3BarChart<T>) children.get(i)).colors();
         }
         return result;
     }
@@ -188,8 +188,8 @@ public class D3StackBarChart<T> extends D3Drawable {
      * stack if there are more data than colors, the colors are used circularly.
      */
     public D3StackBarChart<T> colors(@NonNull int[][] colors) {
-        for (int i = 0; i < barCharts.size(); i++) {
-            barCharts.get(i).colors(colors[i % colors.length]);
+        for (int i = 0; i < children.size(); i++) {
+            ((D3BarChart<T>) children.get(i)).colors(colors[i % colors.length]);
         }
         return this;
     }
@@ -225,14 +225,14 @@ public class D3StackBarChart<T> extends D3Drawable {
     }
 
     @Override public void draw(@NonNull Canvas canvas) {
-        for (D3BarChart<T> barChart : barCharts) {
+        for (D3Drawable barChart : children) {
             barChart.draw(canvas);
         }
     }
 
     @Override public void prepareParameters() {
-        for (int i = 0; i < barCharts.size(); i++) {
-            barCharts.get(i).prepareParameters();
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).prepareParameters();
         }
     }
 }
