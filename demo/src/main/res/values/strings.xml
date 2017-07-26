@@ -1,3 +1,4 @@
 <resources>
-    <string name="app_name">Demo</string>
+    <string name="app_name">D3Android</string>
+    <string name="menu_title">D3Android - Demo</string>
 </resources>

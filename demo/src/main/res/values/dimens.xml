@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="unit_1">8dp</dimen>
+    <dimen name="unit_2">16dp</dimen>
+    <dimen name="unit_3">24dp</dimen>
+
+    <dimen name="card_elevation">4dp</dimen>
+
+    <dimen name="text_unit_1">4sp</dimen>
+    <dimen name="text_unit_2">8sp</dimen>
+    <dimen name="text_unit_3">12sp</dimen>
+    <dimen name="text_unit_4">16sp</dimen>
+    <dimen name="text_unit_5">20sp</dimen>
+    <dimen name="text_unit_6">24sp</dimen>
+    <dimen name="text_unit_7">28sp</dimen>
+</resources>
