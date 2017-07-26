@@ -1,20 +1,24 @@
 package com.applidium.pierreferrand.d3library.boxplot;
 
 import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.util.Log;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
+import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
-public class D3BoxPlot extends D3Drawable {
+@SuppressWarnings({"WeakerAccess", "unused"})
+public class D3BoxPlot<T> extends D3Drawable {
     private static final String OFFSET_X_ERROR = "OffsetX should not be null";
     private static final String DATA_WIDTH_ERROR = "DataWidth should not be null";
-    private static final String DATA_ERROR = "Data should not be null";
     private static final String SCALE_ERROR = "Scale should not be null";
     private static final float DEFAULT_WIDTH = 50F;
     private static final float DEFAULT_OFFSET = 0F;
@@ -23,36 +27,25 @@ public class D3BoxPlot extends D3Drawable {
     @Nullable private D3FloatFunction offsetX;
     @Nullable private D3Scale<Float> scale;
 
-    @Nullable private float[] data;
+    @Nullable D3DataMapperFunction<T> dataMapper;
 
-    private float min;
-    private float max;
-    private float median;
-    private float lowerQuartile;
-    private float upperQuartile;
+    @NonNull private final ValueStorage<Statistics> statistics = new ValueStorage<>();
+    @NonNull private final StatisticsComputer<T> statisticsComputer
+        = new StatisticsComputer<>(this);
+
+    @Nullable T[] data;
 
     public D3BoxPlot() {
         setupDefaultValues();
     }
 
-    public D3BoxPlot(
-        float min, float max, float median, float lowerQuartile, float upperQuartile
-    ) {
-        this.min = min;
-        this.max = max;
-        this.median = median;
-        this.lowerQuartile = lowerQuartile;
-        this.upperQuartile = upperQuartile;
-        setupDefaultValues();
-
-    }
-
-    public D3BoxPlot(@NonNull float[] data) {
+    public D3BoxPlot(@Nullable T[] data) {
         data(data);
         setupDefaultValues();
     }
 
     private void setupDefaultValues() {
+        setupPaint();
         dataWidth(DEFAULT_WIDTH);
         offsetX(DEFAULT_OFFSET);
         scale(new D3Scale<>(new Float[]{0F, 1F}));
@@ -61,16 +54,16 @@ public class D3BoxPlot extends D3Drawable {
     /**
      * If data had be given, returns it. Else returns null.
      */
-    @Nullable public float[] data() {
-        return data != null ? data.clone() : null;
+    @Nullable public T[] data() {
+        return data;
     }
 
     /**
      * Sets the data for the BoxPlot. Compute and update statistics.
      */
-    public D3BoxPlot data(@NonNull float[] data) {
-        this.data = data.clone();
-        computeStatistics();
+    public D3BoxPlot<T> data(@Nullable T[] data) {
+        this.data = data;
+        statisticsComputer.setDataLength(data == null ? 0 : data.length);
         return this;
     }
 
@@ -78,80 +71,35 @@ public class D3BoxPlot extends D3Drawable {
      * Returns the minimum that had been either computed or given.
      */
     public float min() {
-        return min;
-    }
-
-    /**
-     * Sets the minimum and erases data.
-     */
-    public D3BoxPlot min(float min) {
-        data = null;
-        this.min = min;
-        return this;
+        return statistics.getValue().min;
     }
 
     /**
      * Returns the maximum that had been either computed or given.
      */
     public float max() {
-        return max;
-    }
-
-    /**
-     * Sets the maximum and erases data.
-     */
-    public D3BoxPlot max(float max) {
-        data = null;
-        this.max = max;
-        return this;
+        return statistics.getValue().min;
     }
 
     /**
      * Returns the median that had been either computed or given.
      */
     public float median() {
-        return median;
-    }
-
-    /**
-     * Sets the median and erases data.
-     */
-    public D3BoxPlot median(float median) {
-        data = null;
-        this.median = median;
-        return this;
+        return statistics.getValue().median;
     }
 
     /**
      * Returns the lower quartile that had been either computed or given.
      */
     public float lowerQuartile() {
-        return lowerQuartile;
-    }
-
-    /**
-     * Sets the lower quartile and erases data.
-     */
-    public D3BoxPlot lowerQuartile(float lowerQuartile) {
-        data = null;
-        this.lowerQuartile = lowerQuartile;
-        return this;
+        return statistics.getValue().lowerQuartile;
     }
 
     /**
      * Returns the upper quartile that had been either computed or given.
      */
     public float upperQuartile() {
-        return upperQuartile;
-    }
-
-    /**
-     * Sets the upper quartile and erases data.
-     */
-    public D3BoxPlot upperQuartile(float upperQuartile) {
-        data = null;
-        this.upperQuartile = upperQuartile;
-        return this;
+        return statistics.getValue().upperQuartile;
     }
 
     /**
@@ -164,7 +112,7 @@ public class D3BoxPlot extends D3Drawable {
     /**
      * Sets the Scale used by the BoxPlot for drawing itself.
      */
-    public D3BoxPlot scale(@NonNull D3Scale<Float> scale) {
+    public D3BoxPlot<T> scale(@NonNull D3Scale<Float> scale) {
         this.scale = scale;
         return this;
     }
@@ -182,7 +130,7 @@ public class D3BoxPlot extends D3Drawable {
     /**
      * Sets the horizontal offset for the BoxPlot.
      */
-    public D3BoxPlot offsetX(final float offsetX) {
+    public D3BoxPlot<T> offsetX(final float offsetX) {
         this.offsetX = new D3FloatFunction() {
             @Override public float getFloat() {
                 return offsetX;
@@ -194,7 +142,7 @@ public class D3BoxPlot extends D3Drawable {
     /**
      * Sets the horizontal offset for the BoxPlot.
      */
-    public D3BoxPlot offsetX(@NonNull D3FloatFunction offsetX) {
+    public D3BoxPlot<T> offsetX(@NonNull D3FloatFunction offsetX) {
         this.offsetX = offsetX;
         return this;
     }
@@ -212,7 +160,7 @@ public class D3BoxPlot extends D3Drawable {
     /**
      * Sets the width of the BoxPlot's core.
      */
-    public D3BoxPlot dataWidth(final float dataWidth) {
+    public D3BoxPlot<T> dataWidth(final float dataWidth) {
         this.dataWidth = new D3FloatFunction() {
             @Override public float getFloat() {
                 return dataWidth;
@@ -224,55 +172,32 @@ public class D3BoxPlot extends D3Drawable {
     /**
      * Sets the width of the BoxPlot's core.
      */
-    public D3BoxPlot dataWidth(@NonNull D3FloatFunction dataWidth) {
+    public D3BoxPlot<T> dataWidth(@NonNull D3FloatFunction dataWidth) {
         this.dataWidth = dataWidth;
         return this;
     }
 
-    private void computeStatistics() {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-        int i = 0;
-        float swap;
-        while (i < data.length - 1) {
-            if (data[i] > data[i + 1]) {
-                swap = data[i];
-                data[i] = data[i + 1];
-                data[i + 1] = swap;
-                i = Math.max(i - 1, 0);
-            } else {
-                i++;
-            }
-        }
-
-        min = data[0];
-        max = data[data.length - 1];
-        median = data.length % 2 == 0 ?
-            (data[data.length / 2 - 1] + data[data.length / 2]) / 2F :
-            data[data.length / 2];
-
-        lowerQuartile = data[Math.round((float) data.length / 4F)];
-        upperQuartile = data[Math.round((float) data.length * 3F / 4F)];
-
-    }
-
-    @Override public D3BoxPlot onClickAction(@Nullable OnClickAction onClickAction) {
+    @Override public D3BoxPlot<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3BoxPlot onScrollAction(@Nullable OnScrollAction onScrollAction) {
+    @Override public D3BoxPlot<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3BoxPlot onPinchAction(@Nullable OnPinchAction onPinchAction) {
+    @Override public D3BoxPlot<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
 
-    @Override public D3BoxPlot setClipRect(
+    public D3BoxPlot<T> setDataMapper(@NonNull D3DataMapperFunction<T> dataMapper) {
+        this.dataMapper = dataMapper;
+        return this;
+    }
+
+    @Override public D3BoxPlot<T> setClipRect(
         @NonNull D3FloatFunction leftLimit,
         @NonNull D3FloatFunction topLimit,
         @NonNull D3FloatFunction rightLimit,
@@ -282,8 +207,21 @@ public class D3BoxPlot extends D3Drawable {
         return this;
     }
 
-    @Override public D3BoxPlot deleteClipRect() {
+    @Override public D3BoxPlot<T> deleteClipRect() {
         super.deleteClipRect();
+        return this;
+    }
+
+    @Override public void prepareParameters() {
+        if (lazyRecomputing && calculationNeeded() == 0) {
+            return;
+        }
+        statistics.setValue(statisticsComputer);
+    }
+
+    @Override public D3BoxPlot<T> paint(@NonNull Paint paint) {
+        super.paint(paint);
+        paint.setStyle(Paint.Style.STROKE);
         return this;
     }
 
@@ -297,60 +235,56 @@ public class D3BoxPlot extends D3Drawable {
         if (offsetX == null) {
             throw new IllegalStateException(OFFSET_X_ERROR);
         }
-        float coordinateMax = scale.value(max);
-        float coordinateMin = scale.value(min);
-        float coordinateMedian = scale.value(median);
-        float coordinateLowerQuartile = scale.value(lowerQuartile);
-        float coordinateUpperQuartile = scale.value(upperQuartile);
+        Statistics stats = statistics.getValue();
         float realWidth = dataWidth.getFloat();
         float realOffsetX = offsetX.getFloat();
 
 
         canvas.drawLine(
             realOffsetX,
-            coordinateMax,
+            stats.maxCoordinate,
             realOffsetX + realWidth,
-            coordinateMax,
+            stats.maxCoordinate,
             paint
         );
 
         canvas.drawLine(
             realOffsetX,
-            coordinateMin,
+            stats.minCoordinate,
             realOffsetX + realWidth,
-            coordinateMin,
+            stats.minCoordinate,
             paint
         );
 
         canvas.drawLine(
             realOffsetX,
-            coordinateMedian,
+            stats.medianCoordinate,
             realOffsetX + realWidth,
-            coordinateMedian,
+            stats.medianCoordinate,
             paint
         );
 
         canvas.drawRect(
             realOffsetX,
-            coordinateUpperQuartile,
+            stats.upperQuartileCoordinate,
             realOffsetX + realWidth,
-            coordinateLowerQuartile,
+            stats.lowerQuartileCoordinate,
             paint
         );
 
         canvas.drawLine(
             realOffsetX + realWidth / 2F,
-            coordinateMax,
+            stats.maxCoordinate,
             realOffsetX + realWidth / 2F,
-            coordinateUpperQuartile,
+            stats.upperQuartileCoordinate,
             paint
         );
 
         canvas.drawLine(
             realOffsetX + realWidth / 2F,
-            coordinateLowerQuartile,
+            stats.lowerQuartileCoordinate,
             realOffsetX + realWidth / 2F,
-            coordinateMin,
+            stats.minCoordinate,
             paint
         );
     }
