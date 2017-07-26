@@ -6,6 +6,8 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import com.applidium.pierreferrand.demo.activities.TurningArcsActivity;
+import com.applidium.pierreferrand.demo.adapter.ActivityViewModelBuilder;
 import com.applidium.pierreferrand.demo.adapter.RecyclerAdapter;
 
 import butterknife.BindView;
@@ -31,5 +33,12 @@ public class MenuActivity extends Activity {
             this, LinearLayoutManager.VERTICAL, false
         );
         recyclerView.setLayoutManager(manager);
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Turning arcs")
+                .activityClass(TurningArcsActivity.class)
+                .build()
+        );
     }
 }
