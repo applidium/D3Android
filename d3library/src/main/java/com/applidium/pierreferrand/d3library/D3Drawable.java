@@ -223,7 +223,9 @@ public abstract class D3Drawable {
         if (leftLimit != null) {
             canvas.restoreToCount(canvasState);
         }
-        calculationNeeded = lazyRecomputing ? Math.max(calculationNeeded - 1, 0) : 1;
+        synchronized (key) {
+            calculationNeeded = lazyRecomputing ? Math.max(calculationNeeded - 1, 0) : 1;
+        }
     }
 
     /**
@@ -246,7 +248,7 @@ public abstract class D3Drawable {
     public final void updateNeeded() {
         synchronized (key) {
             calculationNeeded = lazyRecomputing ?
-                Math.min(calculationNeeded + 1, MAX_REDRAW_NEEDED) : 1;
+                Math.min(calculationNeeded + 2, MAX_REDRAW_NEEDED) : 2;
         }
     }
 
