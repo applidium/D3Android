@@ -33,17 +33,17 @@ public class D3Area<T> extends D3Line<T> {
         setupPaint();
     }
 
-    @Override public D3Area<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3Area<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Area<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3Area<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Area<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3Area<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }

@@ -257,17 +257,17 @@ public class D3BoxPlot extends D3Drawable {
 
     }
 
-    @Override public D3BoxPlot onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3BoxPlot onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3BoxPlot onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3BoxPlot onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3BoxPlot onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3BoxPlot onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }

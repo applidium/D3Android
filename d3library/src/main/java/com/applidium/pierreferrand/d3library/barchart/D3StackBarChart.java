@@ -194,17 +194,17 @@ public class D3StackBarChart<T> extends D3Drawable {
         return this;
     }
 
-    @Override public D3StackBarChart<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3StackBarChart<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3StackBarChart<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3StackBarChart<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3StackBarChart<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3StackBarChart<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }

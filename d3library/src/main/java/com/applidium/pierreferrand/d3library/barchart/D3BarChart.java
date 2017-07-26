@@ -182,17 +182,17 @@ public class D3BarChart<T> extends D3Drawable {
         return this;
     }
 
-    @Override public D3BarChart<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3BarChart<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3BarChart<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3BarChart<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3BarChart<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3BarChart<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
