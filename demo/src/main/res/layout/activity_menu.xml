@@ -3,6 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:background="@color/eastern_blue"
     android:orientation="vertical"
     >
 
@@ -13,7 +14,8 @@
         android:layout_margin="@dimen/unit_2"
         android:gravity="center"
         android:text="@string/menu_title"
-        android:textSize="@dimen/text_unit_4"
+        android:textColor="@color/white"
+        android:textSize="@dimen/text_unit_7"
         />
 
     <android.support.v7.widget.RecyclerView
