@@ -24,11 +24,11 @@ public class D3StackBarChart<T> extends D3Drawable {
         this(null);
     }
 
-    public D3StackBarChart(@NonNull T[] data, int stackNumber) {
+    public D3StackBarChart(@Nullable T[] data, int stackNumber) {
         data(data, stackNumber);
     }
 
-    public D3StackBarChart(@NonNull T[][] data) {
+    public D3StackBarChart(@Nullable T[][] data) {
         data(data);
     }
 
@@ -38,7 +38,7 @@ public class D3StackBarChart<T> extends D3Drawable {
      * @param stackNumber Defines the number of stack for the StackBarChart
      */
     public D3StackBarChart<T> data(@NonNull T[] data, int stackNumber) {
-        barCharts = new ArrayList<>();
+        barCharts = new ArrayList<>(stackNumber);
         for (int i = 0; i < stackNumber; i++) {
             barCharts.add(new D3BarChart<>(data));
         }
@@ -48,7 +48,11 @@ public class D3StackBarChart<T> extends D3Drawable {
     /**
      * Sets the data for the different StackBar.
      */
-    public D3StackBarChart<T> data(@NonNull T[][] data) {
+    public D3StackBarChart<T> data(@Nullable T[][] data) {
+        if (data == null) {
+            barCharts = new ArrayList<>(0);
+            return this;
+        }
         barCharts = new ArrayList<>();
         for (T[] tab : data) {
             barCharts.add(new D3BarChart<>(tab));

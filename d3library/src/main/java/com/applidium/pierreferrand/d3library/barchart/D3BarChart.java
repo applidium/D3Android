@@ -46,14 +46,14 @@ public class D3BarChart<T> extends D3Drawable {
      * Returns the data of the BarChart.
      */
     @Nullable public T[] data() {
-        return data != null ? data.clone() : null;
+        return data;
     }
 
     /**
      * Sets the data of the BarChart.
      */
     public D3BarChart<T> data(@Nullable T[] data) {
-        this.data = data != null ? data.clone() : null;
+        this.data = data;
         xValueRunnable.setDataLength(data == null ? 0 : data.length);
         yValueRunnable.setDataLength(data == null ? 0 : data.length);
         heightValueRunnable.setDataLength(data == null ? 0 : data.length);
