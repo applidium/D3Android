@@ -27,8 +27,8 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     private static final String RANGE_ERROR = "Range should not be null";
 
     @NonNull private final D3AxisDrawer<T> drawer = new D3AxisDrawer<>(this);
-    @NonNull private final BitmapValueRunnable<T> bitmapValueRunnable =
-        new BitmapValueRunnable<>(drawer);
+    @NonNull private final AxisBitmapValueRunnable<T> bitmapValueRunnable =
+        new AxisBitmapValueRunnable<>(drawer);
     @NonNull private final ValueStorage<Bitmap> bitmapValueStorage = new ValueStorage<>();
 
     @NonNull final TicksValueRunnable<T> ticksValueRunnable = new TicksValueRunnable<>(this);

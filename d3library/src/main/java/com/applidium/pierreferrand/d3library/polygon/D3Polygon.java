@@ -19,7 +19,8 @@ public class D3Polygon extends D3Drawable {
     private static final String Y_ERROR = "Y should not be null";
 
     @NonNull private final ValueStorage<Bitmap> bitmapValueStorage = new ValueStorage<>();
-    @NonNull private final BitmapValueRunnable bitmapValueRunnable = new BitmapValueRunnable(this);
+    @NonNull private final PolygonBitmapValueRunnable bitmapValueRunnable
+        = new PolygonBitmapValueRunnable(this);
 
     @Nullable float[] x;
     @Nullable float[] y;

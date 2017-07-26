@@ -1,32 +1,20 @@
 package com.applidium.pierreferrand.d3library.area;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Path;
 
-import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
+import com.applidium.pierreferrand.d3library.threading.BitmapValueRunnable;
 
-class BitmapValueRunnable<T> extends ValueRunnable<Bitmap> {
+class AreaBitmapValueRunnable<T> extends BitmapValueRunnable {
     private static final String GROUND_ERROR = "Ground should not be null";
     private static final String DATA_ERROR = "Data should not be null";
 
     private final D3Area<T> area;
-    private final Canvas canvas = new Canvas();
 
-    BitmapValueRunnable(D3Area<T> area) {
+    AreaBitmapValueRunnable(D3Area<T> area) {
         this.area = area;
     }
 
-    void onDimensionsChange(float width, float height) {
-        value = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(value);
-    }
-
     @Override protected void computeValue() {
-        draw();
-    }
-
-    private void draw() {
         T[] data = area.data();
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);

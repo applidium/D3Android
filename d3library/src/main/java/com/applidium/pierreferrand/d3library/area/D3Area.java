@@ -21,7 +21,8 @@ public class D3Area<T> extends D3Line<T> {
     @Nullable D3FloatFunction ground;
 
     private final ValueStorage<Bitmap> bitmapValueStorage = new ValueStorage<>();
-    private final BitmapValueRunnable<T> bitmapValueRunnable = new BitmapValueRunnable<>(this);
+    private final AreaBitmapValueRunnable<T> bitmapValueRunnable =
+        new AreaBitmapValueRunnable<>(this);
 
     public D3Area() {
         super();
@@ -108,7 +109,7 @@ public class D3Area<T> extends D3Line<T> {
 
     @Override protected void onDimensionsChange(float width, float height) {
         super.onDimensionsChange(width, height);
-        bitmapValueRunnable.onDimensionsChange(width, height);
+        bitmapValueRunnable.resizeBitmap(width, height);
     }
 
     @Override public void prepareParameters() {

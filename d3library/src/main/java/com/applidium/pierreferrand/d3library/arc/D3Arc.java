@@ -56,7 +56,7 @@ public class D3Arc<T> extends D3Drawable {
     @Nullable String[] labels;
     @NonNull private Paint textPaint;
 
-    @NonNull private final BitmapValueRunnable<T> bitmapValueRunnable;
+    @NonNull private final AngleBitmapValueRunnable<T> bitmapValueRunnable;
     @NonNull private final LabelsValueRunnable<T> labelsValueRunnable;
     @NonNull private final AnglesValueRunnable<T> anglesValueRunnable;
 
@@ -75,7 +75,7 @@ public class D3Arc<T> extends D3Drawable {
         computedOffsetX = new ValueStorage<>();
         computedOffsetY = new ValueStorage<>();
 
-        bitmapValueRunnable = new BitmapValueRunnable<>(this);
+        bitmapValueRunnable = new AngleBitmapValueRunnable<>(this);
         labelsValueRunnable = new LabelsValueRunnable<>(this, textPaint);
         anglesValueRunnable = new AnglesValueRunnable<>(this);
         innerRadiusValueRunnable = new InnerRadiusValueRunnable(this);
