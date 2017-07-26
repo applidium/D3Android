@@ -1,1 +1,1 @@
-include ':app', ':d3library'
+include ':devApp', ':d3library'
