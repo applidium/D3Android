@@ -113,10 +113,11 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
             if (!needRedraw) {
                 try {
                     synchronized (key) {
-                        key.wait();
+                        key.wait(1000);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    return;
                 }
             }
 
