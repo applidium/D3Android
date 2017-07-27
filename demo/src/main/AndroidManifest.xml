@@ -30,5 +30,10 @@
         <activity
             android:name=".activities.CustomArcsActivity"
             />
+
+        <activity
+            android:name=".activities.ObjectArcsActivity"
+            android:screenOrientation="portrait"
+            />
     </application>
 </manifest>
