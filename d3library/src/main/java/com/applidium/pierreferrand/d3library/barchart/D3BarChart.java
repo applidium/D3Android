@@ -9,7 +9,7 @@ import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 public class D3BarChart<T> extends D3Drawable {
@@ -70,7 +70,7 @@ public class D3BarChart<T> extends D3Drawable {
     /**
      * Sets the heights of the BarChart's data representation.
      */
-    public D3BarChart<T> dataHeight(@NonNull D3DataMapperFunction<T> dataHeight) {
+    public D3BarChart<T> dataHeight(@NonNull D3FloatDataMapperFunction<T> dataHeight) {
         heightValueRunnable.setDataMapper(dataHeight);
         return this;
     }
@@ -117,7 +117,7 @@ public class D3BarChart<T> extends D3Drawable {
      * Sets horizontal coordinates of the middle of the bar for each
      * of the BarChart's data representation.
      */
-    public D3BarChart<T> x(@NonNull D3DataMapperFunction<T> x) {
+    public D3BarChart<T> x(@NonNull D3FloatDataMapperFunction<T> x) {
         xValueRunnable.setDataMapper(x);
         return this;
     }
@@ -127,7 +127,7 @@ public class D3BarChart<T> extends D3Drawable {
      * of the BarChart's data representation.
      */
     public D3BarChart<T> x(@NonNull final float x[]) {
-        x(new D3DataMapperFunction<T>() {
+        x(new D3FloatDataMapperFunction<T>() {
             @Override public float compute(T object, int position, T[] data) {
                 return x[position];
             }
@@ -148,7 +148,7 @@ public class D3BarChart<T> extends D3Drawable {
      * of the BarChart's data representation.
      */
     public D3BarChart<T> y(@NonNull final float[] y) {
-        y(new D3DataMapperFunction<T>() {
+        y(new D3FloatDataMapperFunction<T>() {
             @Override public float compute(T object, int position, T[] data) {
                 return y[position];
             }
@@ -160,7 +160,7 @@ public class D3BarChart<T> extends D3Drawable {
      * Sets vertical coordinates of the bottom of the bar for each
      * of the BarChart's data representation.
      */
-    public D3BarChart<T> y(@NonNull D3DataMapperFunction<T> y) {
+    public D3BarChart<T> y(@NonNull D3FloatDataMapperFunction<T> y) {
         yValueRunnable.setDataMapper(y);
         return this;
     }

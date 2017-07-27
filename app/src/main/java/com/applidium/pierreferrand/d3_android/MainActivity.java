@@ -5,7 +5,7 @@ import android.os.Bundle;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3View;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.action.PinchType;
@@ -118,14 +118,14 @@ public class MainActivity extends Activity {
 
         D3StackBarChart<Sales> stackBarChart =
             new D3StackBarChart<>(sales, 4)
-                .x(new D3DataMapperFunction<Sales>() {
+                .x(new D3FloatDataMapperFunction<Sales>() {
                     @Override public float compute(
                         Sales object, int position, Sales[] data
                     ) {
                         return saleAxis.scale().value(object.sale);
                     }
                 })
-                .y(new D3DataMapperFunction<Sales>() {
+                .y(new D3FloatDataMapperFunction<Sales>() {
                     @Override public float compute(
                         Sales object, int position, Sales[] data
                     ) {
@@ -139,9 +139,9 @@ public class MainActivity extends Activity {
                     new int[]{0xFF0000FF},
                     new int[]{0xFFFF0000},
                     });
-        List<D3DataMapperFunction<Sales>> heights = new ArrayList<>();
+        List<D3FloatDataMapperFunction<Sales>> heights = new ArrayList<>();
         heights.add(
-            new D3DataMapperFunction<Sales>() {
+            new D3FloatDataMapperFunction<Sales>() {
                 @Override public float compute(
                     Sales object, int position, Sales[] data
                 ) {
@@ -151,7 +151,7 @@ public class MainActivity extends Activity {
                 }
             });
         heights.add(
-            new D3DataMapperFunction<Sales>() {
+            new D3FloatDataMapperFunction<Sales>() {
                 @Override public float compute(
                     Sales object, int position, Sales[] data
                 ) {
@@ -161,7 +161,7 @@ public class MainActivity extends Activity {
                 }
             });
         heights.add(
-            new D3DataMapperFunction<Sales>() {
+            new D3FloatDataMapperFunction<Sales>() {
                 @Override public float compute(
                     Sales object, int position, Sales[] data
                 ) {
@@ -171,7 +171,7 @@ public class MainActivity extends Activity {
                 }
             });
         heights.add(
-            new D3DataMapperFunction<Sales>() {
+            new D3FloatDataMapperFunction<Sales>() {
                 @Override public float compute(
                     Sales object, int position, Sales[] data
                 ) {

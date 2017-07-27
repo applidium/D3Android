@@ -12,7 +12,7 @@ import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.helper.ColorHelper;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -50,7 +50,7 @@ public class D3Arc<T> extends D3Drawable {
     @NonNull private final ValueStorage<LabelsCoordinates> preComputedLabels;
 
     @Nullable T[] data;
-    @Nullable private D3DataMapperFunction<T> weights;
+    @Nullable private D3FloatDataMapperFunction<T> weights;
     private float[] weightArray;
 
     @Nullable String[] labels;
@@ -84,7 +84,7 @@ public class D3Arc<T> extends D3Drawable {
         offsetYValueRunnable = new OffsetYValueRunnable(this);
 
         data(data);
-        weights(new D3DataMapperFunction<T>() {
+        weights(new D3FloatDataMapperFunction<T>() {
             @Override public float compute(T object, int position, T[] data) {
                 return 1F;
             }
@@ -289,7 +289,7 @@ public class D3Arc<T> extends D3Drawable {
      * Sets the weight used to compute the proportion of each data.
      */
     public D3Arc<T> weights(@NonNull final float[] weights) {
-        this.weights = new D3DataMapperFunction<T>() {
+        this.weights = new D3FloatDataMapperFunction<T>() {
             private float[] customWeights = weights.clone();
 
             @Override public float compute(T object, int position, T[] data) {
@@ -302,7 +302,7 @@ public class D3Arc<T> extends D3Drawable {
     /**
      * Sets the weight used to compute the proportion of each data.
      */
-    public D3Arc<T> weights(@NonNull D3DataMapperFunction<T> weights) {
+    public D3Arc<T> weights(@NonNull D3FloatDataMapperFunction<T> weights) {
         this.weights = weights;
         return this;
     }

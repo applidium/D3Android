@@ -10,7 +10,7 @@ import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.line.D3Line;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
@@ -63,12 +63,12 @@ public class D3Area<T> extends D3Line<T> {
         return this;
     }
 
-    @Override public D3Area<T> x(@NonNull D3DataMapperFunction<T> x) {
+    @Override public D3Area<T> x(@NonNull D3FloatDataMapperFunction<T> x) {
         super.x(x);
         return this;
     }
 
-    @Override public D3Area<T> y(@NonNull D3DataMapperFunction<T> y) {
+    @Override public D3Area<T> y(@NonNull D3FloatDataMapperFunction<T> y) {
         super.y(y);
         return this;
     }
