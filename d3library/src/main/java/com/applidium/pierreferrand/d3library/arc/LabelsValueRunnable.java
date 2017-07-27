@@ -22,12 +22,11 @@ class LabelsValueRunnable<T> extends ValueRunnable<LabelsCoordinates> {
     }
 
     protected void computeValue() {
-        if (arc.labels == null) {
-            return;
-        }
         if (arc.data == null) {
             throw new IllegalStateException(DATA_ERROR);
         }
+
+        String[] labels = arc.labels();
 
         Angles computedAngles = arc.preComputedAngles.getValue();
         float outerRadius = arc.outerRadius();
@@ -44,9 +43,9 @@ class LabelsValueRunnable<T> extends ValueRunnable<LabelsCoordinates> {
             );
 
             coordinateX = outerRadius + radius * (float) Math.cos(radianAngle);
-            coordinateX -= paint.measureText(arc.labels[i]) / 2F;
+            coordinateX -= paint.measureText(labels[i]) / 2F;
             coordinateY = outerRadius - radius * (float) Math.sin(radianAngle);
-            coordinateY += TextHelper.getTextHeight(arc.labels[i], paint) / 2F;
+            coordinateY += TextHelper.getTextHeight(labels[i], paint) / 2F;
             value.coordinatesX[i] = coordinateX;
             value.coordinatesY[i] = coordinateY;
         }
