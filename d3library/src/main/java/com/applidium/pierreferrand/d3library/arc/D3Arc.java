@@ -13,6 +13,7 @@ import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.helper.ColorHelper;
 import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3IntDataMapperFunction;
 import com.applidium.pierreferrand.d3library.mappers.D3StringDataMapperFunction;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
@@ -26,7 +27,8 @@ public class D3Arc<T> extends D3Drawable {
     private static final String OUTER_RADIUS_ERROR = "OuterRadius should not be null.";
     private static final String DATA_ERROR = "Data should not be null.";
 
-    @NonNull int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
+    @NonNull private final ValueStorage<int[]> colors;
+    @NonNull private final ColorsRunnable<T> colorsRunnable;
 
     @Nullable D3FloatFunction outerRadius;
     @Nullable D3FloatFunction innerRadius;
@@ -78,6 +80,7 @@ public class D3Arc<T> extends D3Drawable {
         computedOffsetX = new ValueStorage<>();
         computedOffsetY = new ValueStorage<>();
         labels = new ValueStorage<>();
+        colors = new ValueStorage<>();
 
         bitmapValueRunnable = new AngleBitmapValueRunnable<>(this);
         labelsCoordinatesRunnable = new LabelsValueRunnable<>(this, textPaint);
@@ -87,6 +90,7 @@ public class D3Arc<T> extends D3Drawable {
         offsetXValueRunnable = new OffsetXValueRunnable(this);
         offsetYValueRunnable = new OffsetYValueRunnable(this);
         labelsRunnable = new LabelsRunnable<>(this);
+        colorsRunnable = new ColorsRunnable<>(this);
 
         data(data);
         weights(new D3FloatDataMapperFunction<T>() {
@@ -105,6 +109,7 @@ public class D3Arc<T> extends D3Drawable {
                 return object.toString();
             }
         });
+        colors(new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000});
         startAngle(0F);
         offsetX(0F);
         offsetY(0F);
@@ -200,6 +205,7 @@ public class D3Arc<T> extends D3Drawable {
         anglesValueRunnable.setDataLength(data == null ? 0 : data.length);
         labelsCoordinatesRunnable.setDataLength(data == null ? 0 : data.length);
         labelsRunnable.setDataLength(data == null ? 0 : data.length);
+        colorsRunnable.setDataLength(data == null ? 0 : data.length);
         return this;
     }
 
@@ -207,7 +213,7 @@ public class D3Arc<T> extends D3Drawable {
      * Returns the colors used when the Arc is drawn.
      */
     @NonNull public int[] colors() {
-        return colors;
+        return colors.getValue();
     }
 
     /**
@@ -216,7 +222,15 @@ public class D3Arc<T> extends D3Drawable {
      * the colors will be used circularly.
      */
     public D3Arc<T> colors(@NonNull int[] colors) {
-        this.colors = colors;
+        colorsRunnable.setColors(colors);
+        return this;
+    }
+
+    /**
+     * Sets the colors used when the Arc is drawn.
+     */
+    public D3Arc<T> colors(@NonNull D3IntDataMapperFunction<T> colors) {
+        colorsRunnable.setDataMapper(colors);
         return this;
     }
 
@@ -440,7 +454,7 @@ public class D3Arc<T> extends D3Drawable {
         if (optimize) {
             D3ArcDrawer.drawArcs(
                 canvas, innerRadius(), outerRadius(), offsetX(), offsetY(),
-                preComputedAngles.getValue(), paint, colors
+                preComputedAngles.getValue(), paint, colors()
             );
         } else {
             canvas.drawBitmap(preComputedArc.getValue(), 0F, 0F, null);
@@ -464,9 +478,12 @@ public class D3Arc<T> extends D3Drawable {
         float[] coordinatesY = labelsCoordinatesRunnable.getValue().coordinatesY;
 
         String[] computedLabels = this.labels.getValue();
+        int[] computedColors = colors();
 
         for (int i = 0; i < data.length; i++) {
-            textPaint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
+            textPaint.setColor(ColorHelper.colorDependingOnBackground(
+                computedColors[i % computedColors.length])
+            );
             canvas.drawText(
                 computedLabels[i], coordinatesX[i] + offsetX, coordinatesY[i] + offsetY, textPaint
             );
@@ -484,6 +501,7 @@ public class D3Arc<T> extends D3Drawable {
         preComputedAngles.setValue(anglesValueRunnable);
         labels.setValue(labelsRunnable);
         preComputedLabels.setValue(labelsCoordinatesRunnable);
+        colors.setValue(colorsRunnable);
         if (!optimize) {
             preComputedArc.setValue(bitmapValueRunnable);
         }
