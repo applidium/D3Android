@@ -26,5 +26,9 @@
             android:name=".activities.TurningArcsActivity"
             android:screenOrientation="portrait"
             />
+
+        <activity
+            android:name=".activities.CustomArcsActivity"
+            />
     </application>
 </manifest>
