@@ -6,7 +6,7 @@ import java.util.concurrent.Semaphore;
 
 public abstract class ValueRunnable<T> {
     @NonNull protected final Semaphore semaphore = new Semaphore(0, true);
-    @NonNull private final Object key = new Object();
+    @NonNull protected final Object key = new Object();
 
     protected T value;
 
