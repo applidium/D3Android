@@ -76,17 +76,14 @@ public class D3Polygon extends D3Drawable {
      * Returns the horizontal coordinates of the Polygon's points.
      */
     public float[] x() {
-        if (x == null) {
-            throw new IllegalStateException(X_ERROR);
-        }
-        return x.clone();
+        return x;
     }
 
     /**
      * Sets the horizontal coordinates of the Polygon's points.
      */
     public D3Polygon x(float[] x) {
-        this.x = x.clone();
+        this.x = x;
         return this;
     }
 
@@ -94,17 +91,14 @@ public class D3Polygon extends D3Drawable {
      * Returns the vertical coordinates of the Polygon's points.
      */
     public float[] y() {
-        if (y == null) {
-            throw new IllegalStateException(Y_ERROR);
-        }
-        return y.clone();
+        return y;
     }
 
     /**
      * Sets the vertical coordinates of the Polygon's points.
      */
     public D3Polygon y(float[] y) {
-        this.y = y.clone();
+        this.y = y;
         return this;
     }
 
@@ -127,7 +121,8 @@ public class D3Polygon extends D3Drawable {
     }
 
     /**
-     * Returns the coordinates of the Polygon's points. The array format is [x1, y1, x2, y2, ...]
+     * Returns a copy of the coordinates of the Polygon's points. The array format
+     * is [x1, y1, x2, y2, ...]
      */
     public float[] coordinates() {
         return mergeArrays(x, y);
@@ -143,13 +138,13 @@ public class D3Polygon extends D3Drawable {
     }
 
     /**
-     * Sets the coordinates of the Polygon's points.
+     * Sets the coordinates of the Polygon's points with a copy of the given coordinates.
      * The array format should be [x1, y1, x2, y2, ...]
      */
-    public D3Polygon coordinates(float[] coordinate) {
-        x = new float[coordinate.length / 2];
-        y = new float[coordinate.length / 2];
-        separateArray(coordinate, x, y);
+    public D3Polygon coordinates(float[] coordinates) {
+        x = new float[coordinates.length / 2];
+        y = new float[coordinates.length / 2];
+        separateArray(coordinates, x, y);
         return this;
     }
 
