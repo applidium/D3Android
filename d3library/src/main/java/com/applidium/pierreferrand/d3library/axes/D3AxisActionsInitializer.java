@@ -57,6 +57,10 @@ final class D3AxisActionsInitializer<T> {
                 PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
                 float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
+                if (pinchType == PinchType.HORIZONTAL_DECREASE ||
+                    pinchType == PinchType.HORIZONTAL_INCREASE) {
+                    return;
+                }
                 resizeOnPinch(coordinateStaticY, coordinateMobileY, dY);
                 axis.updateNeeded();
             }
@@ -77,7 +81,7 @@ final class D3AxisActionsInitializer<T> {
 
         int inverted = 0;
         if (coordinateMin > coordinateMax) {
-            inverted = 1;
+            inverted++;
             float tmp = coordinateMin;
             coordinateMin = coordinateMax;
             coordinateMax = tmp;
@@ -92,20 +96,23 @@ final class D3AxisActionsInitializer<T> {
         if (converter == null) {
             throw new IllegalStateException(CONVERTER_ERROR);
         }
-        float propMobile = (coordinateMobile + diffCoordinate - coordinateMin)
-            / (coordinateMax - coordinateMin);
-        float propStatic = (coordinateStatic - coordinateMin) / (coordinateMax - coordinateMin);
-        float valueStatic = converter.convert(axis.scale.invert(coordinateStatic));
-        float valueMobile = converter.convert(axis.scale.invert(coordinateMobile - diffCoordinate));
 
-        float newDomainMin = (valueMobile * propStatic - valueStatic * propMobile)
-            / (propStatic - propMobile);
-        float newDomainMax = (newDomainMin * (propMobile - 1) + valueMobile) /
-            propMobile;
+        float newDomainMin = ((coordinateStatic - coordinateMobile) * coordinateMin -
+            coordinateStatic * diffCoordinate)
+            / (coordinateStatic - coordinateMobile - diffCoordinate);
+        float newDomainMax = ((coordinateStatic - coordinateMobile) * coordinateMax -
+            coordinateStatic * diffCoordinate)
+            / (coordinateStatic - coordinateMobile - diffCoordinate);
 
         T[] domain = axis.domain();
-        domain[inverted] = converter.invert(newDomainMin);
-        domain[1 - inverted] = converter.invert(newDomainMax);
+        if (converter.convert(domain[0]) > converter.convert(domain[1])) {
+            inverted = (inverted + 1) % 2;
+        }
+        /* Two new bounds are computed before to assign the first value in order to not have
+         * side effects. */
+        T result = axis.scale.invert(newDomainMin);
+        domain[1 - inverted] = axis.scale.invert(newDomainMax);
+        domain[inverted] = result;
         axis.domain(domain);
     }
 
@@ -145,6 +152,10 @@ final class D3AxisActionsInitializer<T> {
                 PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
                 float coordinateMobileX, float coordinateMobileY, float dX, float dY
             ) {
+                if (pinchType == PinchType.VERTICAL_DECREASE ||
+                    pinchType == PinchType.VERTICAL_INCREASE) {
+                    return;
+                }
                 resizeOnPinch(coordinateStaticX, coordinateMobileX, dX);
                 axis.updateNeeded();
             }
