@@ -8,6 +8,7 @@ import android.support.v7.widget.RecyclerView;
 
 import com.applidium.pierreferrand.demo.activities.CustomArcsActivity;
 import com.applidium.pierreferrand.demo.activities.ObjectArcsActivity;
+import com.applidium.pierreferrand.demo.activities.RectangleActionsActivity;
 import com.applidium.pierreferrand.demo.activities.TurningArcsActivity;
 import com.applidium.pierreferrand.demo.adapter.ActivityViewModelBuilder;
 import com.applidium.pierreferrand.demo.adapter.RecyclerAdapter;
@@ -54,6 +55,13 @@ public class MenuActivity extends Activity {
             new ActivityViewModelBuilder()
                 .title("Object arcs")
                 .activityClass(ObjectArcsActivity.class)
+                .build()
+        );
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Rectangle actions")
+                .activityClass(RectangleActionsActivity.class)
                 .build()
         );
     }
