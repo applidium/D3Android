@@ -42,6 +42,11 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private float[] differenceX = new float[10];
     private float[] differenceY = new float[10];
 
+    /* Those variables are used to track the scroll */
+    float scrollCurrentX;
+    float scrollCurrentY;
+    boolean isScrollInitialized;
+
     /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
      * can modify the UI.
@@ -214,18 +219,39 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     }
 
     private boolean handleMoveAction(MotionEvent event) {
-        int historySize = event.getHistorySize();
-        if (historySize == 0) {
-            return true;
-        }
         if (event.getPointerCount() == 2) {
             clickTracker = 0;
             handlePinchMovement(event);
         } else if (event.getPointerCount() == 1) {
             clickTracker = Math.max(clickTracker - 1, 0);
-            handleScrollMovement(event, historySize);
+            float previousX = scrollCurrentX;
+            scrollCurrentX = event.getX();
+            float previousY = scrollCurrentY;
+            scrollCurrentY = event.getY();
+            if (!isScrollInitialized) {
+                isScrollInitialized = true;
+                return true;
+            }
+            handleScrollMovement(previousX, previousY, scrollCurrentX, scrollCurrentY);
+            return true;
         }
-        return false;
+        return true;
+    }
+
+    private void handleScrollMovement(
+        float previousX, float previousY, float currentX, float currentY
+    ) {
+        ScrollDirection direction;
+        float diffX = currentX - previousX;
+        float diffY = currentY - previousY;
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            direction = diffX > 0F ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
+        } else {
+            direction = diffY > 0F ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
+        }
+        for (D3Drawable drawable : drawables) {
+            drawable.onScroll(direction, previousX, previousY, diffX, diffY);
+        }
     }
 
     private void handleUpAction(MotionEvent event) {
@@ -237,6 +263,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     }
 
     private void handleDownAction(MotionEvent event) {
+        isScrollInitialized = false;
         clickTracker = event.getPointerCount() == 1 ? DEFAULT_CLICK_ACTIONS_NUMBER : 0;
     }
 
@@ -315,22 +342,6 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
                 return a1 > 0 ?
                     PinchType.VERTICAL_DECREASE : PinchType.VERTICAL_INCREASE;
             }
-        }
-    }
-
-    private void handleScrollMovement(@NonNull MotionEvent event, int historySize) {
-        ScrollDirection direction;
-        float previousX = event.getHistoricalX(historySize - 1);
-        float previousY = event.getHistoricalY(historySize - 1);
-        float diffX = event.getX() - previousX;
-        float diffY = event.getY() - previousY;
-        if (Math.abs(diffX) > Math.abs(diffY)) {
-            direction = diffX > 0F ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
-        } else {
-            direction = diffY > 0F ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
-        }
-        for (D3Drawable drawable : drawables) {
-            drawable.onScroll(direction, previousX, previousY, diffX, diffY);
         }
     }
 

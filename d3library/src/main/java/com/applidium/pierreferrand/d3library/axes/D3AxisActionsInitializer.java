@@ -42,7 +42,7 @@ final class D3AxisActionsInitializer<T> {
                 float absDy = Math.abs(dY);
                 float offset = converter.convert(domain[0])
                     - converter.convert(axis.scale.invert(range[0] + absDy));
-                offset *= sign * 2;
+                offset *= sign;
                 domain[0] = converter.invert(converter.convert(domain[0]) - offset);
                 domain[1] = converter.invert(converter.convert(domain[1]) - offset);
                 axis.scale.domain(domain);
@@ -130,7 +130,7 @@ final class D3AxisActionsInitializer<T> {
                 float absoluteDx = Math.abs(dX);
                 float offset = converter.convert(domain[0])
                     - converter.convert(axis.scale.invert(range[0] + absoluteDx));
-                offset *= sign * 2;
+                offset *= sign;
                 domain[0] = converter.invert(converter.convert(domain[0]) - offset);
                 domain[1] = converter.invert(converter.convert(domain[1]) - offset);
                 axis.scale.domain(domain);
