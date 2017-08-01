@@ -7,6 +7,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.applidium.pierreferrand.demo.activities.CustomArcsActivity;
+import com.applidium.pierreferrand.demo.activities.MultipleBarChartsActivity;
 import com.applidium.pierreferrand.demo.activities.ObjectArcsActivity;
 import com.applidium.pierreferrand.demo.activities.RectangleActionsActivity;
 import com.applidium.pierreferrand.demo.activities.TurningArcsActivity;
@@ -62,6 +63,13 @@ public class MenuActivity extends Activity {
             new ActivityViewModelBuilder()
                 .title("Rectangle actions")
                 .activityClass(RectangleActionsActivity.class)
+                .build()
+        );
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Sales bar chart")
+                .activityClass(MultipleBarChartsActivity.class)
                 .build()
         );
     }
