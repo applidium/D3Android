@@ -15,7 +15,8 @@ import com.applidium.pierreferrand.d3library.scale.D3Converter;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
-@SuppressWarnings({"WeakerAccess", "unused"}) public class D3Axis<T> extends D3Drawable {
+@SuppressWarnings({"WeakerAccess", "unused"})
+public class D3Axis<T> extends D3Drawable {
     private static final float DEFAULT_TICK_SIZE = 25F;
     private static final float DEFAULT_OFFSET = 0F;
     private static final int DEFAULT_TICK_NUMBER = 5;
@@ -64,16 +65,47 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
         setupProperties();
     }
 
+    /**
+     * @param tClass allows to define some behaviors for simple types (Float, Integer)
+     */
+    public D3Axis(@NonNull AxisOrientation orientation, Class<T> tClass) {
+        this(orientation);
+        converter(AxisDefaultInitializer.getDefaultConverter(tClass));
+    }
+
     public D3Axis(@NonNull AxisOrientation orientation, @NonNull D3Scale<T> scale) {
         this.orientation = orientation;
         this.scale = scale;
         setupProperties();
     }
 
+    /**
+     * @param tClass allows to define some behaviors for simple types (Float, Integer)
+     */
+    public D3Axis(
+        @NonNull AxisOrientation orientation, @NonNull D3Scale<T> scale, Class<T> tClass
+    ) {
+        this(orientation, scale);
+        converter(AxisDefaultInitializer.getDefaultConverter(tClass));
+    }
+
     private void setupProperties() {
         translate(DEFAULT_OFFSET, DEFAULT_OFFSET);
         ticks(DEFAULT_TICK_NUMBER);
         this.legendProperties = new LegendProperties();
+        if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
+            offsetY(new D3FloatFunction() {
+                @Override public float getFloat() {
+                    return END_PROPORTION * height();
+                }
+            });
+        } else {
+            offsetX(new D3FloatFunction() {
+                @Override public float getFloat() {
+                    return BEGINNING_PROPORTION * width();
+                }
+            });
+        }
         setupPaint();
         setupDefaultActions();
     }
@@ -129,7 +161,7 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
     /**
      * Returns the range of the associated scale.
      */
-    @Nullable float[] range() {
+    @Nullable public float[] range() {
         return scale.range();
     }
 
@@ -153,16 +185,27 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
      * Sets the coordinates of the origin.
      */
     public D3Axis<T> translate(final float offsetX, final float offsetY) {
-        this.offsetX = new D3FloatFunction() {
-            @NonNull @Override public float getFloat() {
-                return offsetX;
+        translate(
+            new D3FloatFunction() {
+                @NonNull @Override public float getFloat() {
+                    return offsetX;
+                }
+            },
+            new D3FloatFunction() {
+                @NonNull @Override public float getFloat() {
+                    return offsetY;
+                }
             }
-        };
-        this.offsetY = new D3FloatFunction() {
-            @NonNull @Override public float getFloat() {
-                return offsetY;
-            }
-        };
+        );
+        return this;
+    }
+
+    /**
+     * Sets the coordinates of the origin.
+     */
+    public D3Axis<T> translate(@NonNull D3FloatFunction offsetX, @NonNull D3FloatFunction offsetY) {
+        offsetX(offsetX);
+        offsetY(offsetY);
         return this;
     }
 
