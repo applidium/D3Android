@@ -12,6 +12,7 @@ import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
+import com.applidium.pierreferrand.d3library.scale.D3LabelFunction;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
@@ -493,6 +494,15 @@ public class D3Axis<T> extends D3Drawable {
     public D3Axis<T> legendOffset(float offsetX, float offsetY) {
         legendProperties.offsetX(offsetX);
         legendProperties.offsetY(offsetY);
+        return this;
+    }
+
+    public D3LabelFunction<T> labelFunction() {
+        return scale.labelFunction();
+    }
+
+    public D3Axis<T> labelFunction(D3LabelFunction<T> labelFunction) {
+        scale.labelFunction(labelFunction);
         return this;
     }
 
