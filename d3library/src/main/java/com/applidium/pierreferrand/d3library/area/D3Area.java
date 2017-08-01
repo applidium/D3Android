@@ -123,4 +123,9 @@ public class D3Area<T> extends D3Line<T> {
     @Override public void draw(@NonNull Canvas canvas) {
         canvas.drawBitmap(bitmapValueStorage.getValue(), 0F, 0F, null);
     }
+
+    @Override public D3Area<T> lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
+        return this;
+    }
 }
