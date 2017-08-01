@@ -11,6 +11,7 @@ import com.applidium.pierreferrand.demo.activities.MultipleBarChartsActivity;
 import com.applidium.pierreferrand.demo.activities.ObjectArcsActivity;
 import com.applidium.pierreferrand.demo.activities.RectangleActionsActivity;
 import com.applidium.pierreferrand.demo.activities.TurningArcsActivity;
+import com.applidium.pierreferrand.demo.activities.GrowingLineChartActivity;
 import com.applidium.pierreferrand.demo.adapter.ActivityViewModelBuilder;
 import com.applidium.pierreferrand.demo.adapter.RecyclerAdapter;
 
@@ -70,6 +71,13 @@ public class MenuActivity extends Activity {
             new ActivityViewModelBuilder()
                 .title("Sales bar chart")
                 .activityClass(MultipleBarChartsActivity.class)
+                .build()
+        );
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Growing line chart")
+                .activityClass(GrowingLineChartActivity.class)
                 .build()
         );
     }
