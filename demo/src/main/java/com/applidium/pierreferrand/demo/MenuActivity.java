@@ -7,6 +7,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.applidium.pierreferrand.demo.activities.CustomArcsActivity;
+import com.applidium.pierreferrand.demo.activities.MultipleAreasActivity;
 import com.applidium.pierreferrand.demo.activities.MultipleBarChartsActivity;
 import com.applidium.pierreferrand.demo.activities.ObjectArcsActivity;
 import com.applidium.pierreferrand.demo.activities.RectangleActionsActivity;
@@ -78,6 +79,13 @@ public class MenuActivity extends Activity {
             new ActivityViewModelBuilder()
                 .title("Growing line chart")
                 .activityClass(GrowingLineChartActivity.class)
+                .build()
+        );
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Multiple areas")
+                .activityClass(MultipleAreasActivity.class)
                 .build()
         );
     }

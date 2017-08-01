@@ -3,4 +3,5 @@
     <string name="menu_title">D3Android - Demo</string>
     <string name="object_arcs_activity_message">Click on a fruit to increase its sales. Click elsewhere in the view to increase the sales of a random fruit.</string>
     <string name="rectangle_actions_activity_message">You can move and resize the rectangle</string>
+    <string name="multiple_areas_activity_message">Click to add generate a new random entry.</string>
 </resources>
