@@ -52,14 +52,20 @@ public class D3Axis<T> extends D3Drawable {
         scale = new D3Scale<>();
         if (orientation == AxisOrientation.TOP || orientation == AxisOrientation.BOTTOM) {
             scale.range(new D3RangeFunction() {
+                float[] range = new float[2];
                 @Override public float[] getRange() {
-                    return new float[]{BEGINNING_PROPORTION * width(), END_PROPORTION * width()};
+                    range[0] = BEGINNING_PROPORTION * width();
+                    range[1] = END_PROPORTION * width();
+                    return range;
                 }
             });
         } else {
             scale.range(new D3RangeFunction() {
+                float[] range = new float[2];
                 @Override public float[] getRange() {
-                    return new float[]{END_PROPORTION * height(), BEGINNING_PROPORTION * height()};
+                    range[0] = END_PROPORTION * height();
+                    range[1] = BEGINNING_PROPORTION * height();
+                    return range;
                 }
             });
         }
