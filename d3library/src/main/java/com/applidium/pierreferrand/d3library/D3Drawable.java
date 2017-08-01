@@ -31,7 +31,7 @@ public abstract class D3Drawable {
     private int canvasState;
 
     protected boolean lazyRecomputing = true;
-    private int calculationNeeded = 1;
+    private int calculationNeeded = MAX_REDRAW_NEEDED;
 
     @Nullable protected List<D3Drawable> children;
 
