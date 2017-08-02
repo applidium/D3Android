@@ -224,6 +224,11 @@ public class D3BoxPlot<T> extends D3Drawable {
         return this;
     }
 
+    @Override public D3BoxPlot<T> lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
+        return this;
+    }
+
     @Override public void draw(@NonNull Canvas canvas) {
         if (scale == null) {
             throw new IllegalStateException(SCALE_ERROR);
