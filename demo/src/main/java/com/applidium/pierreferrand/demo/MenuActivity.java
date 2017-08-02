@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import com.applidium.pierreferrand.demo.activities.BoxPlotActivity;
 import com.applidium.pierreferrand.demo.activities.CustomArcsActivity;
 import com.applidium.pierreferrand.demo.activities.DrawPolygonActivity;
 import com.applidium.pierreferrand.demo.activities.MultipleAreasActivity;
@@ -94,6 +95,13 @@ public class MenuActivity extends Activity {
             new ActivityViewModelBuilder()
                 .title("Draw polygon")
                 .activityClass(DrawPolygonActivity.class)
+                .build()
+        );
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Box plot")
+                .activityClass(BoxPlotActivity.class)
                 .build()
         );
     }
