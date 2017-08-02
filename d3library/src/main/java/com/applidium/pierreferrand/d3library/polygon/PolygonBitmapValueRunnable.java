@@ -18,6 +18,11 @@ class PolygonBitmapValueRunnable extends BitmapValueRunnable {
 
     @Override protected void computeValue() {
         value.eraseColor(0);
+
+        if (polygon.x.length == 0) {
+            return;
+        }
+
         path.rewind();
 
         float computedOffsetX = polygon.offsetX();
