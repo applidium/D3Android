@@ -7,6 +7,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
 import com.applidium.pierreferrand.demo.activities.CustomArcsActivity;
+import com.applidium.pierreferrand.demo.activities.DrawPolygonActivity;
 import com.applidium.pierreferrand.demo.activities.MultipleAreasActivity;
 import com.applidium.pierreferrand.demo.activities.MultipleBarChartsActivity;
 import com.applidium.pierreferrand.demo.activities.ObjectArcsActivity;
@@ -86,6 +87,13 @@ public class MenuActivity extends Activity {
             new ActivityViewModelBuilder()
                 .title("Multiple areas")
                 .activityClass(MultipleAreasActivity.class)
+                .build()
+        );
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Draw polygon")
+                .activityClass(DrawPolygonActivity.class)
                 .build()
         );
     }
