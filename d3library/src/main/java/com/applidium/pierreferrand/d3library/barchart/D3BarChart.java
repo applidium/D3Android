@@ -15,6 +15,8 @@ import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 public class D3BarChart<T> extends D3Drawable {
     private static final String DATA_ERROR = "Data should not be null";
     private static final String DATA_WIDTH_ERROR = "DataWidth should not be null";
+    private static final float DEFAULT_DATA_WIDTH = 30F;
+
     @NonNull private int[] colors = new int[]{0xFF0000FF};
 
     @Nullable T[] data;
@@ -40,6 +42,8 @@ public class D3BarChart<T> extends D3Drawable {
     public D3BarChart(@Nullable T[] data) {
         data(data);
         setupPaint();
+        dataWidth(DEFAULT_DATA_WIDTH);
+
     }
 
     /**
