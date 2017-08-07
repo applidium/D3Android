@@ -191,7 +191,7 @@ public class D3BoxPlot<T> extends D3Drawable {
         return this;
     }
 
-    public D3BoxPlot<T> setDataMapper(@NonNull D3FloatDataMapperFunction<T> dataMapper) {
+    public D3BoxPlot<T> dataMapper(@NonNull D3FloatDataMapperFunction<T> dataMapper) {
         this.dataMapper = dataMapper;
         return this;
     }
