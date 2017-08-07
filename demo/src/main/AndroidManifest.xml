@@ -42,6 +42,11 @@
             />
 
         <activity
+            android:name=".activities.BarChartActivity"
+            android:screenOrientation="portrait"
+            />
+
+        <activity
             android:name=".activities.MultipleBarChartsActivity"
             android:screenOrientation="portrait"
             />

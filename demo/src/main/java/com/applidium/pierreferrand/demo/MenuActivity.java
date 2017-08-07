@@ -6,6 +6,7 @@ import android.support.annotation.Nullable;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 
+import com.applidium.pierreferrand.demo.activities.BarChartActivity;
 import com.applidium.pierreferrand.demo.activities.BoxPlotActivity;
 import com.applidium.pierreferrand.demo.activities.CustomArcsActivity;
 import com.applidium.pierreferrand.demo.activities.DrawPolygonActivity;
@@ -73,6 +74,13 @@ public class MenuActivity extends Activity {
         adapter.addActivity(
             new ActivityViewModelBuilder()
                 .title("Sales bar chart")
+                .activityClass(BarChartActivity.class)
+                .build()
+        );
+
+        adapter.addActivity(
+            new ActivityViewModelBuilder()
+                .title("Sales stacking bar charts")
                 .activityClass(MultipleBarChartsActivity.class)
                 .build()
         );
