@@ -1,12 +1,9 @@
 package com.applidium.pierreferrand.d3_android;
 
 import android.app.Activity;
-import android.graphics.Canvas;
 import android.os.Bundle;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
-import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.D3View;
 import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
@@ -58,7 +55,6 @@ public class MainActivity extends Activity {
                 .domain(new Integer[]{0, 8000})
                 .range(new D3RangeFunction() {
                     float[] range = new float[2];
-
                     @Override public float[] getRange() {
                         range[0] = view.getHeight() * 0.8f;
                         range[1] = view.getHeight() * 0.1f;
@@ -72,7 +68,6 @@ public class MainActivity extends Activity {
                 .ticks(6)
                 .range(new D3RangeFunction() {
                     float[] range = new float[2];
-
                     @Override public float[] getRange() {
                         range[0] = 0.05f * view.getWidth();
                         range[1] = 0.95f * view.getWidth();
@@ -189,11 +184,6 @@ public class MainActivity extends Activity {
         view.add(numberAxis);
         view.add(saleAxis);
         view.add(stackBarChart);
-        view.add(new D3Drawable() {
-            @Override public void draw(@NonNull Canvas canvas) {
-
-            }
-        }.lazyRecomputing(false));
     }
 
     class Sales {

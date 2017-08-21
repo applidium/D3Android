@@ -56,7 +56,7 @@ public class D3Arc<T> extends D3Drawable {
     @Nullable String[] labels;
     @NonNull private Paint textPaint;
 
-    @NonNull private final BitmapValueRunnable<T> bitmapValueRunnable;
+    @NonNull private final AngleBitmapValueRunnable<T> bitmapValueRunnable;
     @NonNull private final LabelsValueRunnable<T> labelsValueRunnable;
     @NonNull private final AnglesValueRunnable<T> anglesValueRunnable;
 
@@ -75,7 +75,7 @@ public class D3Arc<T> extends D3Drawable {
         computedOffsetX = new ValueStorage<>();
         computedOffsetY = new ValueStorage<>();
 
-        bitmapValueRunnable = new BitmapValueRunnable<>(this);
+        bitmapValueRunnable = new AngleBitmapValueRunnable<>(this);
         labelsValueRunnable = new LabelsValueRunnable<>(this, textPaint);
         anglesValueRunnable = new AnglesValueRunnable<>(this);
         innerRadiusValueRunnable = new InnerRadiusValueRunnable(this);
@@ -83,9 +83,7 @@ public class D3Arc<T> extends D3Drawable {
         offsetXValueRunnable = new OffsetXValueRunnable(this);
         offsetYValueRunnable = new OffsetYValueRunnable(this);
 
-        if (data != null) {
-            data(data);
-        }
+        data(data);
         weights(new D3DataMapperFunction<T>() {
             @Override public float compute(T object, int position, T[] data) {
                 return 1F;
@@ -180,17 +178,23 @@ public class D3Arc<T> extends D3Drawable {
      * Returns the data used by the Arc.
      */
     @Nullable public T[] data() {
-        return data != null ? data.clone() : null;
+        return data;
     }
 
     /**
      * Sets the data used by the Arc.
      */
-    public D3Arc<T> data(@NonNull T[] data) {
+    public D3Arc<T> data(@Nullable T[] data) {
+        this.data = data;
+        if (data == null) {
+            weightArray = new float[0];
+            anglesValueRunnable.setDataLength(0);
+            labelsValueRunnable.setDataLength(0);
+            return this;
+        }
         weightArray = new float[data.length];
         anglesValueRunnable.setDataLength(data.length);
         labelsValueRunnable.setDataLength(data.length);
-        this.data = data.clone();
         return this;
     }
 

@@ -46,14 +46,14 @@ public class D3BarChart<T> extends D3Drawable {
      * Returns the data of the BarChart.
      */
     @Nullable public T[] data() {
-        return data != null ? data.clone() : null;
+        return data;
     }
 
     /**
      * Sets the data of the BarChart.
      */
     public D3BarChart<T> data(@Nullable T[] data) {
-        this.data = data != null ? data.clone() : null;
+        this.data = data;
         xValueRunnable.setDataLength(data == null ? 0 : data.length);
         yValueRunnable.setDataLength(data == null ? 0 : data.length);
         heightValueRunnable.setDataLength(data == null ? 0 : data.length);
@@ -182,17 +182,17 @@ public class D3BarChart<T> extends D3Drawable {
         return this;
     }
 
-    @Override public D3BarChart<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3BarChart<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3BarChart<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3BarChart<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3BarChart<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3BarChart<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }

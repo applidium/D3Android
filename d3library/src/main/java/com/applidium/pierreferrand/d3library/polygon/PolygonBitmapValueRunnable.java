@@ -1,30 +1,20 @@
 package com.applidium.pierreferrand.d3library.polygon;
 
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
 import android.graphics.Path;
 import android.support.annotation.NonNull;
 
-import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
+import com.applidium.pierreferrand.d3library.threading.BitmapValueRunnable;
 
-public class BitmapValueRunnable extends ValueRunnable<Bitmap> {
+class PolygonBitmapValueRunnable extends BitmapValueRunnable {
     @NonNull private final D3Polygon polygon;
-    @NonNull private final Canvas canvas;
     @NonNull private final Path path;
 
 
-    public BitmapValueRunnable(@NonNull D3Polygon polygon) {
+    PolygonBitmapValueRunnable(@NonNull D3Polygon polygon) {
         this.polygon = polygon;
-        canvas = new Canvas();
         path = new Path();
         path.setFillType(Path.FillType.WINDING);
     }
-
-    void resizeBitmap(float width, float height) {
-        value = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(value);
-    }
-
 
     @Override protected void computeValue() {
         path.rewind();

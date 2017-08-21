@@ -13,6 +13,8 @@ import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 
+import java.util.List;
+
 public abstract class D3Drawable {
     private static final float DEFAULT_STROKE_WIDTH = 5.0F;
     private static final int MAX_REDRAW_NEEDED = 4;
@@ -30,6 +32,8 @@ public abstract class D3Drawable {
 
     protected boolean lazyRecomputing = true;
     private int calculationNeeded = 1;
+
+    @Nullable protected List<D3Drawable> children;
 
     @NonNull protected Paint paint;
 
@@ -101,6 +105,12 @@ public abstract class D3Drawable {
         this.height = height;
         this.width = width;
         onDimensionsChange(width, height);
+        if (children == null) {
+            return;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).setDimensions(height, width);
+        }
     }
 
     protected void onDimensionsChange(float width, float height) {
@@ -178,6 +188,12 @@ public abstract class D3Drawable {
     public void prepareParameters() {
         /* Nothing to do. Child classes can override this method to launch computation
          * of parameters before drawing. */
+        if (children == null) {
+            return;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).prepareParameters();
+        }
     }
 
     /**
@@ -217,13 +233,29 @@ public abstract class D3Drawable {
                 bottomLimit.getFloat()
             );
         }
+
+        if (children == null) {
+            return;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).preDraw(canvas);
+        }
     }
 
     final void postDraw(@NonNull Canvas canvas) {
         if (leftLimit != null) {
             canvas.restoreToCount(canvasState);
         }
-        calculationNeeded = lazyRecomputing ? Math.max(calculationNeeded - 1, 0) : 1;
+        synchronized (key) {
+            calculationNeeded = lazyRecomputing ? Math.max(calculationNeeded - 1, 0) : 1;
+        }
+
+        if (children == null) {
+            return;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).postDraw(canvas);
+        }
     }
 
     /**
@@ -246,7 +278,14 @@ public abstract class D3Drawable {
     public final void updateNeeded() {
         synchronized (key) {
             calculationNeeded = lazyRecomputing ?
-                Math.min(calculationNeeded + 1, MAX_REDRAW_NEEDED) : 1;
+                Math.min(calculationNeeded + 2, MAX_REDRAW_NEEDED) : 2;
+        }
+
+        if (children == null) {
+            return;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).updateNeeded();
         }
     }
 
@@ -254,6 +293,13 @@ public abstract class D3Drawable {
         synchronized (key) {
             calculationNeeded = lazyRecomputing ?
                 Math.min(calculationNeeded + updatesNeeded, MAX_REDRAW_NEEDED) : 1;
+        }
+
+        if (children == null) {
+            return;
+        }
+        for (int i = 0; i < children.size(); i++) {
+            children.get(i).updateNeeded(updatesNeeded);
         }
     }
 
