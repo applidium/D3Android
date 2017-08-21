@@ -9,18 +9,14 @@ import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.action.PinchType;
+import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.scale.LinearInterpolator;
-import com.applidium.pierreferrand.d3library.threading.ThreadPool;
-import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.Callable;
-import java.util.concurrent.Executors;
-
+@SuppressWarnings("unused")
 public class D3Line<T> extends D3Drawable {
     private static final String X_ERROR = "X should not be null";
     private static final String DATA_ERROR = "Data should not be null";
@@ -28,8 +24,11 @@ public class D3Line<T> extends D3Drawable {
     private static final String STORE_ERROR =
         "PrepareParameters should have be called to setup storeX and storeY";
 
-    @Nullable private ValueStorage<float[]> storeX;
-    @Nullable private ValueStorage<float[]> storeY;
+    @NonNull private final ValueStorage<float[]> storeX;
+    @NonNull private final CoordinatesValueStorage<T> xValueStorage;
+    @NonNull private final ValueStorage<float[]> storeY;
+    @NonNull private final CoordinatesValueStorage<T> yValueStorage;
+    @NonNull private float[] lines;
 
     @Nullable protected T[] data;
     @Nullable private D3DataMapperFunction<T> x;
@@ -42,10 +41,34 @@ public class D3Line<T> extends D3Drawable {
     }
 
     public D3Line(@Nullable T[] data) {
-        this.data = data != null ? data.clone() : null;
+        storeX = new ValueStorage<>();
+        storeY = new ValueStorage<>();
+        xValueStorage = new CoordinatesValueStorage<>(this);
+        yValueStorage = new CoordinatesValueStorage<>(this);
+
+        data(data);
         interpolator = new LinearInterpolator();
         onClickAction(null);
         setupPaint();
+        setupActions();
+    }
+
+    private void setupActions() {
+        onScrollAction(new OnScrollAction() {
+            @Override public void onScroll(
+                ScrollDirection direction, float coordinateX, float coordinateY, float dX, float dY
+            ) {
+                updateNeeded();
+            }
+        });
+        onPinchAction(new OnPinchAction() {
+            @Override public void onPinch(
+                PinchType pinchType, float coordinateStaticX, float coordinateStaticY,
+                float coordinateMobileX, float coordinateMobileY, float dX, float dY
+            ) {
+                updateNeeded();
+            }
+        });
     }
 
     /**
@@ -55,44 +78,7 @@ public class D3Line<T> extends D3Drawable {
         if (x == null) {
             throw new IllegalStateException(X_ERROR);
         }
-        if (storeX != null) {
-            return storeX.getValue();
-        }
-        return compute(x);
-    }
-
-    private float[] compute(@NonNull D3DataMapperFunction<T> mapper) {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-        final float[] result = new float[data.length];
-
-        List<Callable<Object>> tasks = new ArrayList<>();
-        for (int k = 0; k < ThreadPool.CORES_NUMBER; k++) {
-            buildTask(mapper, result, tasks, k);
-        }
-        ThreadPool.execute(tasks);
-        return result;
-    }
-
-    private void buildTask(
-        @NonNull final D3DataMapperFunction<T> mapper,
-        @NonNull final float[] result,
-        @NonNull List<Callable<Object>> tasks,
-        final int k
-    ) {
-        tasks.add(Executors.callable(
-            new Runnable() {
-                @Override public void run() {
-                    if (data == null) {
-                        throw new IllegalStateException(DATA_ERROR);
-                    }
-                    for (int i = k; i < result.length; i += ThreadPool.CORES_NUMBER) {
-                        result[i] = mapper.compute(data[i], i, data);
-                    }
-                }
-            }
-        ));
+        return storeX.getValue();
     }
 
     /**
@@ -100,6 +86,7 @@ public class D3Line<T> extends D3Drawable {
      */
     public D3Line<T> x(@NonNull D3DataMapperFunction<T> x) {
         this.x = x;
+        xValueStorage.setMapper(x);
         return this;
     }
 
@@ -110,10 +97,7 @@ public class D3Line<T> extends D3Drawable {
         if (y == null) {
             throw new IllegalStateException(Y_ERROR);
         }
-        if (storeY != null) {
-            return storeY.getValue();
-        }
-        return compute(y);
+        return storeY.getValue();
     }
 
     /**
@@ -121,6 +105,7 @@ public class D3Line<T> extends D3Drawable {
      */
     public D3Line<T> y(D3DataMapperFunction<T> y) {
         this.y = y;
+        yValueStorage.setMapper(y);
         return this;
     }
 
@@ -128,14 +113,24 @@ public class D3Line<T> extends D3Drawable {
      * Returns the data used by the Line.
      */
     @Nullable public T[] data() {
-        return data != null ? data.clone() : null;
+        return data;
     }
 
     /**
      * Sets the data used by the Line.
      */
-    public D3Line<T> data(@NonNull T[] data) {
-        this.data = data.clone();
+    public D3Line<T> data(@Nullable T[] data) {
+        if (data == null) {
+            this.data = null;
+            xValueStorage.setDataLength(0);
+            yValueStorage.setDataLength(0);
+            lines = new float[0];
+            return this;
+        }
+        xValueStorage.setDataLength(data.length);
+        yValueStorage.setDataLength(data.length);
+        lines = new float[4 * (data.length - 1)];
+        this.data = data;
         return this;
     }
 
@@ -158,8 +153,8 @@ public class D3Line<T> extends D3Drawable {
      * Returns the float value, interpolated from the horizontal coordinate given.
      */
     public float interpolateValue(float measuredX) {
-        float[] computedX = storeX != null ? storeX.getValue() : x();
-        float[] computedY = storeY != null ? storeY.getValue() : y();
+        float[] computedX = storeX.getValue();
+        float[] computedY = storeY.getValue();
         int index = 0;
         while (index < computedY.length - 2 && computedX[index + 1] < measuredX) {
             index++;
@@ -173,6 +168,7 @@ public class D3Line<T> extends D3Drawable {
 
     @Override public D3Line<T> paint(@NonNull Paint paint) {
         super.paint(paint);
+        paint.setStyle(Paint.Style.STROKE);
         return this;
     }
 
@@ -180,26 +176,26 @@ public class D3Line<T> extends D3Drawable {
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);
         }
-        if (storeX == null || storeY == null) {
-            throw new IllegalStateException(STORE_ERROR);
-        }
         if (data.length < 2) {
             return;
         }
-
         float[] computedX = storeX.getValue();
         float[] computedY = storeY.getValue();
-
-        for (int i = 1; i < data.length; i++) {
-            canvas.drawLine(computedX[i - 1], computedY[i - 1], computedX[i], computedY[i], paint);
+        for (int i = 0; i < data.length - 1; i++) {
+            lines[i * 4] = computedX[i];
+            lines[i * 4 + 1] = computedY[i];
+            lines[i * 4 + 2] = computedX[i + 1];
+            lines[i * 4 + 3] = computedY[i + 1];
         }
+        canvas.drawLines(lines, paint);
     }
 
     @Override public void prepareParameters() {
-        storeX = new ValueStorage<>();
-        storeX.setValue(buildRunnable(x));
-        storeY = new ValueStorage<>();
-        storeY.setValue(buildRunnable(y));
+        if (lazyRecomputing && calculationNeeded() == 0) {
+            return;
+        }
+        storeX.setValue(xValueStorage);
+        storeY.setValue(yValueStorage);
     }
 
     @Override public D3Line<T> setClipRect(
@@ -232,13 +228,8 @@ public class D3Line<T> extends D3Drawable {
         return this;
     }
 
-    @NonNull private ValueRunnable<float[]> buildRunnable(
-        @NonNull final D3DataMapperFunction<T> mapper
-    ) {
-        return new ValueRunnable<float[]>() {
-            @Override protected void computeValue() {
-                value = compute(mapper);
-            }
-        };
+    @Override public D3Line<T> lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
+        return this;
     }
 }

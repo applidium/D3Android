@@ -70,10 +70,11 @@ public abstract class D3Drawable {
      * the Paint
      */
     protected void setupPaint() {
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(Color.rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+        Paint newPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
+        newPaint.setColor(Color.rgb(0, 0, 0));
+        newPaint.setStyle(Paint.Style.FILL);
+        newPaint.setStrokeWidth(DEFAULT_STROKE_WIDTH);
+        paint(newPaint);
     }
 
     /**

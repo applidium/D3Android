@@ -3,16 +3,17 @@ package com.applidium.pierreferrand.d3library.scale;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
+import com.applidium.pierreferrand.d3library.axes.D3DomainFunction;
 import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
-import com.applidium.pierreferrand.d3library.helper.ArrayConverterHelper;
 
-public class D3Scale<T> {
+@SuppressWarnings("unused") public class D3Scale<T> {
     private static final int DEFAULT_TICK_NUMBER = 10;
     private static final String DOMAIN_ERROR = "Domain should not be null";
     private static final String CONVERTER_ERROR = "Converter should not be null";
 
-    @Nullable private D3RangeFunction<T> domain;
-    @Nullable private D3RangeFunction<Float> range;
+    @Nullable private D3DomainFunction<T> domain;
+    private float[] domainArray;
+    @Nullable private D3RangeFunction range;
 
     @NonNull private Interpolator interpolator;
     @Nullable private D3Converter<T> converter;
@@ -25,12 +26,12 @@ public class D3Scale<T> {
         this(domain, null);
     }
 
-    public D3Scale(@Nullable T[] domain, @Nullable Float[] range) {
+    public D3Scale(@Nullable T[] domain, @Nullable float[] range) {
         this(domain, range, new LinearInterpolator());
     }
 
     public D3Scale(
-        @Nullable T[] domain, @Nullable Float[] range, @NonNull Interpolator interpolator
+        @Nullable T[] domain, @Nullable float[] range, @NonNull Interpolator interpolator
     ) {
         if (domain != null) {
             this.domain(domain);
@@ -52,71 +53,69 @@ public class D3Scale<T> {
      * Sets the domain of the Scale.
      */
     public D3Scale<T> domain(@NonNull final T[] domain) {
-        this.domain = new D3RangeFunction<T>() {
-            private T[] data = domain.clone();
-
-            @Override public T[] getRange() {
-                return data.clone();
-            }
-        };
+        if (this.domain == null || !(this.domain instanceof WrapperDomainFunction)) {
+            domain(new WrapperDomainFunction<>(domain));
+        } else {
+            ((WrapperDomainFunction<T>)this.domain).setData(domain);
+            AdaptDomainArrayLength(this.domain);
+        }
         return this;
+    }
+
+    private void AdaptDomainArrayLength(@Nullable D3DomainFunction<T> domain) {
+        if (domainArray == null || domainArray.length != domain.getRange().length) {
+            domainArray = new float[domain.getRange().length];
+        }
     }
 
     /**
      * Sets the domain of the Scale.
      */
-    public D3Scale<T> domain(@Nullable D3RangeFunction<T> domain) {
+    public D3Scale<T> domain(@Nullable D3DomainFunction<T> domain) {
         this.domain = domain;
+        AdaptDomainArrayLength(domain);
         return this;
     }
 
     /**
      * Returns the range of the Scale.
      */
-    @Nullable public Float[] range() {
-        if (range == null) {
-            return domainFloatValue();
-        }
-        Float[] result = range.getRange();
-        if (result != null) {
-            return result;
-        }
-        return domainFloatValue();
+    @Nullable public float[] range() {
+        return range.getRange();
     }
 
-    @Nullable private Float[] domainFloatValue() {
+    @Nullable private float[] domainFloatValue() {
         if (domain == null) {
-            return null;
+            return domainArray;
         }
         if (converter == null) {
             throw new IllegalStateException(CONVERTER_ERROR);
         }
         T[] computedDomain = domain.getRange();
-        Float[] result = new Float[computedDomain.length];
         for (int i = 0; i < computedDomain.length; i++) {
-            result[i] = converter.convert(computedDomain[i]);
+            domainArray[i] = converter.convert(computedDomain[i]);
         }
-        return result;
+        return domainArray;
     }
 
     /**
      * Sets the range of the Scale.
      */
-    public D3Scale<T> range(@NonNull final Float[] range) {
-        this.range = new D3RangeFunction<Float>() {
-            private Float[] data = range != null ? range.clone() : null;
+    public D3Scale<T> range(@NonNull final float[] range) {
+        range(new D3RangeFunction() {
+            private float[] data = range;
 
-            @Override @Nullable public Float[] getRange() {
-                return data.clone();
+            @Override @Nullable public float[] getRange() {
+                return data;
             }
-        };
+        });
         return this;
     }
 
     /**
      * Sets the range of the Scale.
      */
-    public D3Scale<T> range(@Nullable D3RangeFunction<Float> range) {
+    public D3Scale<T> range(@Nullable D3RangeFunction range) {
         this.range = range;
         return this;
     }
@@ -145,8 +144,8 @@ public class D3Scale<T> {
         }
         return interpolator.interpolate(
             converter.convert(domainValue),
-            ArrayConverterHelper.convertArray(domainFloatValue()),
-            ArrayConverterHelper.convertArray(range())
+            domainFloatValue(),
+            range()
         );
     }
 
@@ -162,8 +161,8 @@ public class D3Scale<T> {
         }
         float interpolation = interpolator.interpolate(
             rangeValue,
-            ArrayConverterHelper.convertArray(range()),
-            ArrayConverterHelper.convertArray(domainFloatValue())
+            range(),
+            domainFloatValue()
         );
         return converter.invert(interpolation);
     }
@@ -180,7 +179,6 @@ public class D3Scale<T> {
      * Returns the converter.
      */
     @Nullable public D3Converter<T> converter() {
-        ticks();
         return converter;
     }
 
@@ -192,64 +190,61 @@ public class D3Scale<T> {
     }
 
     /**
-     * See {@link #ticks(int)}. Uses {@link #DEFAULT_TICK_NUMBER}.
+     * See {@link #ticks(int, float[])}. Uses {@link #DEFAULT_TICK_NUMBER}.
      */
-    public float[] ticks() {
-        return ticks(DEFAULT_TICK_NUMBER);
+    public float[] ticks(float[] result) {
+        return ticks(DEFAULT_TICK_NUMBER, result);
     }
 
     /**
      * Returns uniformly spaced float domain values.
      */
-    public float[] ticks(int count) {
+    public float[] ticks(int count, float[] result) {
         if (domain == null) {
             throw new IllegalStateException(DOMAIN_ERROR);
         }
-        float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue());
-        float[] ticks = new float[count];
+        float[] computedDomain = domainFloatValue();
         if (count == 1) {
-            ticks[0] = (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2;
-            return ticks;
+            result[0] = (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2;
+            return result;
         }
 
         for (int i = 0; i < count; i++) {
-            ticks[i] = i * computedDomain[computedDomain.length - 1] / (count - 1)
+            result[i] = i * computedDomain[computedDomain.length - 1] / (count - 1)
                 + (count - 1 - i) * computedDomain[0] / (count - 1);
         }
 
-        return ticks;
+        return result;
     }
 
     /**
      * Returns the labels of uniformly spaced float domain values.
      */
-    public String[] ticksLegend(int count) {
+    public String[] ticksLegend(int count, String[] result) {
         if (domain == null) {
             throw new IllegalStateException(DOMAIN_ERROR);
         }
         if (converter == null) {
             throw new IllegalStateException(CONVERTER_ERROR);
         }
-        float[] computedDomain = ArrayConverterHelper.convertArray(domainFloatValue());
-        String[] legends = new String[count];
+        float[] computedDomain = domainFloatValue();
 
         if (count == 1) {
-            legends[0] = converter.invert(
+            result[0] = converter.invert(
                 (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2
             ).toString();
-            return legends;
+            return result;
         }
 
         for (int i = 1; i < count - 1; i++) {
-            legends[i] = converter
+            result[i] = converter
                 .invert(i * computedDomain[computedDomain.length - 1] / (count - 1)
                             + (count - 1 - i) * computedDomain[0] / (count - 1))
                 .toString();
         }
         T[] domainValues = domain();
-        legends[0] = domainValues[0].toString();
-        legends[count - 1] = domainValues[computedDomain.length - 1].toString();
-
-        return legends;
+        result[0] = domainValues[0].toString();
+        result[count - 1] = domainValues[computedDomain.length - 1].toString();
+        return result;
     }
 }
