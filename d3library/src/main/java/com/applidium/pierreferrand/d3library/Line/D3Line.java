@@ -9,6 +9,7 @@ import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.scale.LinearInterpolator;
 import com.applidium.pierreferrand.d3library.threading.ThreadPool;
@@ -198,6 +199,21 @@ public class D3Line<T> extends D3Drawable {
         final Object keyY = new Object();
         storeX = new ValueStorage<>(buildRunnable(keyX, x), keyX);
         storeY = new ValueStorage<>(buildRunnable(keyY, y), keyY);
+    }
+
+    @Override public D3Line<T> setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3Line<T> deleteClipRect() {
+        super.deleteClipRect();
+        return this;
     }
 
     @Override public D3Line<T> onClickAction(@NonNull OnClickAction onClickAction) {

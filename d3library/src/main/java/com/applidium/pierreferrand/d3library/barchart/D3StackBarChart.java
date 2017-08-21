@@ -205,6 +205,21 @@ public class D3StackBarChart<T> extends D3Drawable {
         return this;
     }
 
+    @Override public D3StackBarChart<T> setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3StackBarChart<T> deleteClipRect() {
+        super.deleteClipRect();
+        return this;
+    }
+
     @Override public void draw(@NonNull Canvas canvas) {
         for (D3BarChart<T> barChart : barCharts) {
             barChart.draw(canvas);

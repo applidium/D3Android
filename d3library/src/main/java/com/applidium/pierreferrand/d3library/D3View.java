@@ -109,7 +109,9 @@ public class D3View extends SurfaceView implements Runnable {
         }
         for (D3Drawable drawable : drawables) {
             drawable.setDimensions(getHeight(), getWidth());
+            drawable.preDraw(canvas);
             drawable.draw(canvas);
+            drawable.postDraw(canvas);
         }
         for (final Action action : afterDrawActions) {
             handler.post(new Runnable() {

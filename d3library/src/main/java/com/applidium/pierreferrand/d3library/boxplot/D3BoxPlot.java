@@ -272,6 +272,21 @@ public class D3BoxPlot extends D3Drawable {
         return this;
     }
 
+    @Override public D3BoxPlot setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3BoxPlot deleteClipRect() {
+        super.deleteClipRect();
+        return this;
+    }
+
     @Override public void draw(@NonNull Canvas canvas) {
         if (scale == null) {
             throw new IllegalStateException(SCALE_ERROR);

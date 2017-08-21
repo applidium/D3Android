@@ -498,6 +498,21 @@ public class D3Arc<T> extends D3Drawable {
         );
     }
 
+    @Override public D3Arc<T> setClipRect(
+        @NonNull D3FloatFunction leftLimit,
+        @NonNull D3FloatFunction topLimit,
+        @NonNull D3FloatFunction rightLimit,
+        @NonNull D3FloatFunction bottomLimit
+    ) {
+        super.setClipRect(leftLimit, topLimit, rightLimit, bottomLimit);
+        return this;
+    }
+
+    @Override public D3Arc<T> deleteClipRect() {
+        super.deleteClipRect();
+        return this;
+    }
+
     private Angles computeStartAngle() {
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);
