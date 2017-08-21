@@ -15,7 +15,7 @@ class AngleBitmapValueRunnable<T> extends BitmapValueRunnable {
         value.eraseColor(0);
         D3ArcDrawer.drawArcs(
             canvas, arc.innerRadius(), arc.outerRadius(), arc.offsetX(), arc.offsetY(),
-            arc.preComputedAngles.getValue(), arc.paint(), arc.colors
+            arc.preComputedAngles.getValue(), arc.paint(), arc.colors()
         );
     }
 }

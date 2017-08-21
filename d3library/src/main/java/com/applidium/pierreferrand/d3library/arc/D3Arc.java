@@ -12,7 +12,9 @@ import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.helper.ColorHelper;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3IntDataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3StringDataMapperFunction;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 @SuppressWarnings({"unused", "WeakerAccess"})
@@ -25,7 +27,8 @@ public class D3Arc<T> extends D3Drawable {
     private static final String OUTER_RADIUS_ERROR = "OuterRadius should not be null.";
     private static final String DATA_ERROR = "Data should not be null.";
 
-    @NonNull int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
+    @NonNull private final ValueStorage<int[]> colors;
+    @NonNull private final ColorsRunnable<T> colorsRunnable;
 
     @Nullable D3FloatFunction outerRadius;
     @Nullable D3FloatFunction innerRadius;
@@ -50,14 +53,16 @@ public class D3Arc<T> extends D3Drawable {
     @NonNull private final ValueStorage<LabelsCoordinates> preComputedLabels;
 
     @Nullable T[] data;
-    @Nullable private D3DataMapperFunction<T> weights;
+    @Nullable private D3FloatDataMapperFunction<T> weights;
     private float[] weightArray;
 
-    @Nullable String[] labels;
+    @NonNull private final LabelsRunnable<T> labelsRunnable;
+    @NonNull private final ValueStorage<String[]> labels;
+
     @NonNull private Paint textPaint;
 
     @NonNull private final AngleBitmapValueRunnable<T> bitmapValueRunnable;
-    @NonNull private final LabelsValueRunnable<T> labelsValueRunnable;
+    @NonNull private final LabelsValueRunnable<T> labelsCoordinatesRunnable;
     @NonNull private final AnglesValueRunnable<T> anglesValueRunnable;
 
     public D3Arc() {
@@ -74,17 +79,21 @@ public class D3Arc<T> extends D3Drawable {
         computedOuterRadius = new ValueStorage<>();
         computedOffsetX = new ValueStorage<>();
         computedOffsetY = new ValueStorage<>();
+        labels = new ValueStorage<>();
+        colors = new ValueStorage<>();
 
         bitmapValueRunnable = new AngleBitmapValueRunnable<>(this);
-        labelsValueRunnable = new LabelsValueRunnable<>(this, textPaint);
+        labelsCoordinatesRunnable = new LabelsValueRunnable<>(this, textPaint);
         anglesValueRunnable = new AnglesValueRunnable<>(this);
         innerRadiusValueRunnable = new InnerRadiusValueRunnable(this);
         outerRadiusValueRunnable = new OuterRadiusValueRunnable(this);
         offsetXValueRunnable = new OffsetXValueRunnable(this);
         offsetYValueRunnable = new OffsetYValueRunnable(this);
+        labelsRunnable = new LabelsRunnable<>(this);
+        colorsRunnable = new ColorsRunnable<>(this);
 
         data(data);
-        weights(new D3DataMapperFunction<T>() {
+        weights(new D3FloatDataMapperFunction<T>() {
             @Override public float compute(T object, int position, T[] data) {
                 return 1F;
             }
@@ -95,6 +104,12 @@ public class D3Arc<T> extends D3Drawable {
                 return Math.min(height(), width()) / 2;
             }
         });
+        labels(new D3StringDataMapperFunction<T>() {
+            @Override public String compute(T object, int position, T[] data) {
+                return object.toString();
+            }
+        });
+        colors(new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000});
         startAngle(0F);
         offsetX(0F);
         offsetY(0F);
@@ -186,15 +201,11 @@ public class D3Arc<T> extends D3Drawable {
      */
     public D3Arc<T> data(@Nullable T[] data) {
         this.data = data;
-        if (data == null) {
-            weightArray = new float[0];
-            anglesValueRunnable.setDataLength(0);
-            labelsValueRunnable.setDataLength(0);
-            return this;
-        }
-        weightArray = new float[data.length];
-        anglesValueRunnable.setDataLength(data.length);
-        labelsValueRunnable.setDataLength(data.length);
+        weightArray = new float[data == null ? 0 : data.length];
+        anglesValueRunnable.setDataLength(data == null ? 0 : data.length);
+        labelsCoordinatesRunnable.setDataLength(data == null ? 0 : data.length);
+        labelsRunnable.setDataLength(data == null ? 0 : data.length);
+        colorsRunnable.setDataLength(data == null ? 0 : data.length);
         return this;
     }
 
@@ -202,7 +213,7 @@ public class D3Arc<T> extends D3Drawable {
      * Returns the colors used when the Arc is drawn.
      */
     @NonNull public int[] colors() {
-        return colors;
+        return colors.getValue();
     }
 
     /**
@@ -211,7 +222,15 @@ public class D3Arc<T> extends D3Drawable {
      * the colors will be used circularly.
      */
     public D3Arc<T> colors(@NonNull int[] colors) {
-        this.colors = colors;
+        colorsRunnable.setColors(colors);
+        return this;
+    }
+
+    /**
+     * Sets the colors used when the Arc is drawn.
+     */
+    public D3Arc<T> colors(@NonNull D3IntDataMapperFunction<T> colors) {
+        colorsRunnable.setDataMapper(colors);
         return this;
     }
 
@@ -289,7 +308,7 @@ public class D3Arc<T> extends D3Drawable {
      * Sets the weight used to compute the proportion of each data.
      */
     public D3Arc<T> weights(@NonNull final float[] weights) {
-        this.weights = new D3DataMapperFunction<T>() {
+        this.weights = new D3FloatDataMapperFunction<T>() {
             private float[] customWeights = weights.clone();
 
             @Override public float compute(T object, int position, T[] data) {
@@ -302,7 +321,7 @@ public class D3Arc<T> extends D3Drawable {
     /**
      * Sets the weight used to compute the proportion of each data.
      */
-    public D3Arc<T> weights(@NonNull D3DataMapperFunction<T> weights) {
+    public D3Arc<T> weights(@NonNull D3FloatDataMapperFunction<T> weights) {
         this.weights = weights;
         return this;
     }
@@ -311,7 +330,7 @@ public class D3Arc<T> extends D3Drawable {
      * Sets the float values associated to each data.
      */
     @Nullable public String[] labels() {
-        return labels != null ? labels.clone() : null;
+        return labels.getValue();
     }
 
     /**
@@ -319,27 +338,16 @@ public class D3Arc<T> extends D3Drawable {
      * If parameter is set to true, the labels will be computed to the current data using toString()
      * method on each data.
      */
-    public D3Arc<T> labels(boolean drawLabelsDependingOnData) {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-
-        if (drawLabelsDependingOnData) {
-            labels = new String[data.length];
-            for (int i = 0; i < data.length; i++) {
-                labels[i] = data[i].toString();
-            }
-        } else {
-            labels = null;
-        }
+    public D3Arc<T> labels(D3StringDataMapperFunction<T> labels) {
+        labelsRunnable.setDataMapper(labels);
         return this;
     }
 
     /**
      * Sets the labels to use.
      */
-    public D3Arc<T> labels(@NonNull String[] labels) {
-        this.labels = labels.clone();
+    public D3Arc<T> labels(@NonNull final String[] labels) {
+        labelsRunnable.setLabels(labels);
         return this;
     }
 
@@ -446,7 +454,7 @@ public class D3Arc<T> extends D3Drawable {
         if (optimize) {
             D3ArcDrawer.drawArcs(
                 canvas, innerRadius(), outerRadius(), offsetX(), offsetY(),
-                preComputedAngles.getValue(), paint, colors
+                preComputedAngles.getValue(), paint, colors()
             );
         } else {
             canvas.drawBitmap(preComputedArc.getValue(), 0F, 0F, null);
@@ -466,13 +474,18 @@ public class D3Arc<T> extends D3Drawable {
 
         float offsetX = offsetX();
         float offsetY = offsetY();
-        float[] coordinatesX = labelsValueRunnable.getValue().coordinatesX;
-        float[] coordinatesY = labelsValueRunnable.getValue().coordinatesY;
+        float[] coordinatesX = labelsCoordinatesRunnable.getValue().coordinatesX;
+        float[] coordinatesY = labelsCoordinatesRunnable.getValue().coordinatesY;
+
+        String[] computedLabels = this.labels.getValue();
+        int[] computedColors = colors();
 
         for (int i = 0; i < data.length; i++) {
-            textPaint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
+            textPaint.setColor(ColorHelper.colorDependingOnBackground(
+                computedColors[i % computedColors.length])
+            );
             canvas.drawText(
-                labels[i], coordinatesX[i] + offsetX, coordinatesY[i] + offsetY, textPaint
+                computedLabels[i], coordinatesX[i] + offsetX, coordinatesY[i] + offsetY, textPaint
             );
         }
     }
@@ -486,7 +499,9 @@ public class D3Arc<T> extends D3Drawable {
         computedInnerRadius.setValue(innerRadiusValueRunnable);
         computedOuterRadius.setValue(outerRadiusValueRunnable);
         preComputedAngles.setValue(anglesValueRunnable);
-        preComputedLabels.setValue(labelsValueRunnable);
+        labels.setValue(labelsRunnable);
+        preComputedLabels.setValue(labelsCoordinatesRunnable);
+        colors.setValue(colorsRunnable);
         if (!optimize) {
             preComputedArc.setValue(bitmapValueRunnable);
         }

@@ -9,10 +9,13 @@ public abstract class BitmapValueRunnable extends ValueRunnable<Bitmap> {
 
     protected BitmapValueRunnable() {
         canvas = new Canvas();
+        resizeBitmap(1F, 1F);
     }
 
     public void resizeBitmap(float width, float height) {
-        value = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888);
-        canvas.setBitmap(value);
+        synchronized (key) {
+            value = Bitmap.createBitmap((int) width, (int) height, Bitmap.Config.ARGB_8888);
+            canvas.setBitmap(value);
+        }
     }
 }

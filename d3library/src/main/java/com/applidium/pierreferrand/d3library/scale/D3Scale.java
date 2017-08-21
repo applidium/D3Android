@@ -18,6 +18,8 @@ import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
     @NonNull private Interpolator interpolator;
     @Nullable private D3Converter<T> converter;
 
+    @NonNull private D3LabelFunction<T> labelFunction;
+
     public D3Scale() {
         this(null, null);
     }
@@ -39,7 +41,12 @@ import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
         if (range != null) {
             this.range(range);
         }
-        this.interpolator(interpolator);
+        interpolator(interpolator);
+        labelFunction = new D3LabelFunction<T>() {
+            @Override public String getLabel(T object) {
+                return object.toString();
+            }
+        };
     }
 
     /**
@@ -189,6 +196,15 @@ import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
         return new D3Scale<>(domain(), range(), interpolator);
     }
 
+    public D3LabelFunction<T> labelFunction() {
+        return labelFunction;
+    }
+
+    public D3Scale<T> labelFunction(D3LabelFunction<T> labelFunction) {
+        this.labelFunction = labelFunction;
+        return this;
+    }
+
     /**
      * See {@link #ticks(int, float[])}. Uses {@link #DEFAULT_TICK_NUMBER}.
      */
@@ -230,21 +246,20 @@ import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
         float[] computedDomain = domainFloatValue();
 
         if (count == 1) {
-            result[0] = converter.invert(
+            result[0] = labelFunction.getLabel(converter.invert(
                 (computedDomain[0] + computedDomain[computedDomain.length - 1]) / 2
-            ).toString();
+            ));
             return result;
         }
 
         for (int i = 1; i < count - 1; i++) {
-            result[i] = converter
+            result[i] = labelFunction.getLabel(converter
                 .invert(i * computedDomain[computedDomain.length - 1] / (count - 1)
-                            + (count - 1 - i) * computedDomain[0] / (count - 1))
-                .toString();
+                            + (count - 1 - i) * computedDomain[0] / (count - 1)));
         }
         T[] domainValues = domain();
-        result[0] = domainValues[0].toString();
-        result[count - 1] = domainValues[computedDomain.length - 1].toString();
+        result[0] = labelFunction.getLabel(domainValues[0]);
+        result[count - 1] = labelFunction.getLabel(domainValues[computedDomain.length - 1]);
         return result;
     }
 }

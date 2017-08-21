@@ -5,7 +5,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
@@ -102,7 +102,7 @@ public class D3StackBarChart<T> extends D3Drawable {
     /**
      * Sets horizontal coordinates of the middle of the bars.
      */
-    public D3StackBarChart<T> x(@NonNull D3DataMapperFunction<T> x) {
+    public D3StackBarChart<T> x(@NonNull D3FloatDataMapperFunction<T> x) {
         for (D3Drawable barChart : children) {
             ((D3BarChart<T>) barChart).x(x);
         }
@@ -120,7 +120,7 @@ public class D3StackBarChart<T> extends D3Drawable {
      * Sets the vertical coordinates of the bottom of the bars.
      */
     public D3StackBarChart<T> y(final float y) {
-        return y(new D3DataMapperFunction<T>() {
+        return y(new D3FloatDataMapperFunction<T>() {
             @Override public float compute(T object, int position, T[] data) {
                 return y;
             }
@@ -130,11 +130,11 @@ public class D3StackBarChart<T> extends D3Drawable {
     /**
      * Sets the vertical coordinates of the bottom of the bars.
      */
-    public D3StackBarChart<T> y(@NonNull D3DataMapperFunction<T> y) {
+    public D3StackBarChart<T> y(@NonNull D3FloatDataMapperFunction<T> y) {
         ((D3BarChart<T>) children.get(0)).y(y);
         for (int i = 1; i < children.size(); i++) {
             final int finalI = i;
-            ((D3BarChart<T>) children.get(i)).y(new D3DataMapperFunction<T>() {
+            ((D3BarChart<T>) children.get(i)).y(new D3FloatDataMapperFunction<T>() {
                 @Override public float compute(T object, int position, T[] data) {
                     return ((D3BarChart<T>) children.get(finalI - 1)).y()[position]
                         - ((D3BarChart<T>) children.get(finalI - 1)).dataHeight()[position];
@@ -150,7 +150,7 @@ public class D3StackBarChart<T> extends D3Drawable {
     public D3StackBarChart<T> dataHeight(@NonNull final float[][] dataHeight) {
         for (int i = 0; i < dataHeight.length; i++) {
             final int finalI = i;
-            ((D3BarChart<T>) children.get(i)).dataHeight(new D3DataMapperFunction<T>() {
+            ((D3BarChart<T>) children.get(i)).dataHeight(new D3FloatDataMapperFunction<T>() {
                 private float[] heights = dataHeight[finalI];
 
                 @Override public float compute(T object, int position, T[] data) {
@@ -164,7 +164,7 @@ public class D3StackBarChart<T> extends D3Drawable {
     /**
      * Sets the different heights for the stacks of BarChart.
      */
-    public D3StackBarChart<T> dataHeight(@NonNull List<D3DataMapperFunction<T>> dataHeight) {
+    public D3StackBarChart<T> dataHeight(@NonNull List<D3FloatDataMapperFunction<T>> dataHeight) {
         for (int i = 0; i < dataHeight.size(); i++) {
             ((D3BarChart<T>) children.get(i)).dataHeight(dataHeight.get(i));
         }

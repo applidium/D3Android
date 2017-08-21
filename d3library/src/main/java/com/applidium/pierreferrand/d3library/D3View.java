@@ -38,9 +38,21 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private boolean needRedraw = true;
     private long lastDraw = System.currentTimeMillis();
 
-    private float[] maxDifferenceAbsolute = new float[10];
-    private float[] differenceX = new float[10];
-    private float[] differenceY = new float[10];
+    private float[] maxDifferenceAbsolute = new float[2];
+    private float[] differenceX = new float[2];
+    private float[] differenceY = new float[2];
+
+    /* Those variables are used to track the scroll */
+    float scrollCurrentX;
+    float scrollCurrentY;
+    boolean isScrollInitialized;
+
+    /* Those variables are used to track the scroll */
+    float[] pinchPreviousX = new float[2];
+    float[] pinchCurrentX = new float[2];
+    float[] pinchPreviousY = new float[2];
+    float[] pinchCurrentY = new float[2];
+    boolean isPinchInitialized;
 
     /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
@@ -113,10 +125,11 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
             if (!needRedraw) {
                 try {
                     synchronized (key) {
-                        key.wait();
+                        key.wait(1000);
                     }
                 } catch (InterruptedException e) {
                     e.printStackTrace();
+                    return;
                 }
             }
 
@@ -213,77 +226,86 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     }
 
     private boolean handleMoveAction(MotionEvent event) {
-        int historySize = event.getHistorySize();
-        if (historySize == 0) {
+        if (event.getPointerCount() == 1) {
+            handleScrollMovement(event);
             return true;
-        }
-        if (event.getPointerCount() == 2) {
+        } else if (event.getPointerCount() == 2) {
             clickTracker = 0;
             handlePinchMovement(event);
-        } else if (event.getPointerCount() == 1) {
-            clickTracker = Math.max(clickTracker - 1, 0);
-            handleScrollMovement(event, historySize);
+            return true;
         }
         return false;
     }
 
-    private void handleUpAction(MotionEvent event) {
-        if (clickTracker > 0) {
-            for (D3Drawable drawable : drawables) {
-                drawable.onClick(event.getX(), event.getY());
-            }
+    private void handleScrollMovement(MotionEvent event) {
+        clickTracker = Math.max(clickTracker - 1, 0);
+        float previousX = scrollCurrentX;
+        scrollCurrentX = event.getX();
+        float previousY = scrollCurrentY;
+        scrollCurrentY = event.getY();
+        if (!isScrollInitialized) {
+            isScrollInitialized = true;
+            return;
         }
-    }
 
-    private void handleDownAction(MotionEvent event) {
-        clickTracker = event.getPointerCount() == 1 ? DEFAULT_CLICK_ACTIONS_NUMBER : 0;
-    }
-
-    private void handlePointerDownAction() {
-        clickTracker = 0;
+        ScrollDirection direction;
+        float diffX = scrollCurrentX - previousX;
+        float diffY = scrollCurrentY - previousY;
+        if (Math.abs(diffX) > Math.abs(diffY)) {
+            direction = diffX > 0F ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
+        } else {
+            direction = diffY > 0F ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
+        }
+        for (D3Drawable drawable : drawables) {
+            drawable.onScroll(direction, previousX, previousY, diffX, diffY);
+        }
     }
 
     private void handlePinchMovement(@NonNull MotionEvent event) {
-        if (event.getPointerCount() > maxDifferenceAbsolute.length) {
-            maxDifferenceAbsolute = new float[2 * event.getPointerCount()];
-            differenceX = new float[2 * event.getPointerCount()];
-            differenceY = new float[2 * event.getPointerCount()];
+        int histLength = event.getHistorySize();
+        if (histLength == 0) {
+            return;
+        }
+        pinchPreviousX[0] = pinchCurrentX[0];
+        pinchPreviousX[1] = pinchCurrentX[1];
+        pinchPreviousY[0] = pinchCurrentY[0];
+        pinchPreviousY[1] = pinchCurrentY[1];
+
+        pinchCurrentX[0] = event.getX(0);
+        pinchCurrentX[1] = event.getX(1);
+        pinchCurrentY[0] = event.getY(0);
+        pinchCurrentY[1] = event.getY(1);
+
+        if (!isPinchInitialized) {
+            isPinchInitialized = true;
+            return;
         }
 
-        int histLength = event.getHistorySize();
-        computeDifferences(event, maxDifferenceAbsolute, differenceX, differenceY);
-        int indexMovement = findFingerMovedIndex(maxDifferenceAbsolute);
-        PinchType pinchType = computePinchType(
-            event, differenceX[indexMovement], differenceY[indexMovement], indexMovement
-        );
+        updateDifferences();
+        int indexMovement = findFingerMovedIndex();
+        PinchType pinchType = computePinchType(indexMovement);
         for (D3Drawable drawable : drawables) {
             drawable.onPinch(
                 pinchType,
-                event.getHistoricalX(1 - indexMovement, histLength - 1),
-                event.getHistoricalY(1 - indexMovement, histLength - 1),
-                event.getHistoricalX(indexMovement, histLength - 1),
-                event.getHistoricalY(indexMovement, histLength - 1),
+                pinchPreviousX[1 - indexMovement],
+                pinchPreviousY[1 - indexMovement],
+                pinchPreviousX[indexMovement],
+                pinchPreviousY[indexMovement],
                 differenceX[indexMovement],
                 differenceY[indexMovement]
             );
         }
     }
 
-    private void computeDifferences(
-        @NonNull MotionEvent event,
-        @NonNull float[] maxDifferenceAbsolute,
-        @NonNull float[] differenceX,
-        @NonNull float[] differenceY
-    ) {
-        int historySize = event.getHistorySize();
-        for (int i = 0; i < event.getPointerCount(); i++) {
-            differenceX[i] = event.getX(i) - event.getHistoricalX(i, historySize - 1);
-            differenceY[i] = event.getY(i) - event.getHistoricalY(i, historySize - 1);
+    private void updateDifferences() {
+        for (int i = 0; i < 2; i++) {
+            differenceX[i] = pinchCurrentX[i] - pinchPreviousX[i];
+            differenceY[i] = pinchCurrentY[i] - pinchPreviousY[i];
             maxDifferenceAbsolute[i] = Math.max(Math.abs(differenceX[i]), Math.abs(differenceY[i]));
         }
     }
 
-    private int findFingerMovedIndex(@NonNull float[] maxDifferenceAbsolute) {
+    private int findFingerMovedIndex() {
         int result = 0;
         float diffMovementAbsolute = maxDifferenceAbsolute[0];
         for (int i = 1; i < maxDifferenceAbsolute.length; i++) {
@@ -295,42 +317,46 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
         return result;
     }
 
-    private PinchType computePinchType(
-        @NonNull MotionEvent event, float a, float a1, int indexMovement
-    ) {
-        if (Math.abs(a) > Math.abs(a1)) {
-            if (event.getX(indexMovement) > event.getX(1 - indexMovement)) {
-                return a > 0 ?
+    private PinchType computePinchType(int indexMovement) {
+        float x = differenceX[indexMovement];
+        float y = differenceY[indexMovement];
+        if (Math.abs(x) > Math.abs(y)) {
+            if (pinchCurrentX[indexMovement] > pinchCurrentX[1 - indexMovement]) {
+                return x > 0 ?
                     PinchType.HORIZONTAL_INCREASE : PinchType.HORIZONTAL_DECREASE;
             } else {
-                return a > 0 ?
+                return x > 0 ?
                     PinchType.HORIZONTAL_DECREASE : PinchType.HORIZONTAL_INCREASE;
             }
         } else {
-            if (event.getY(indexMovement) > event.getY(1 - indexMovement)) {
-                return a1 > 0 ?
+            if (pinchCurrentY[indexMovement] > pinchCurrentY[1 - indexMovement]) {
+                return y > 0 ?
                     PinchType.VERTICAL_INCREASE : PinchType.VERTICAL_DECREASE;
             } else {
-                return a1 > 0 ?
+                return y > 0 ?
                     PinchType.VERTICAL_DECREASE : PinchType.VERTICAL_INCREASE;
             }
         }
     }
 
-    private void handleScrollMovement(@NonNull MotionEvent event, int historySize) {
-        ScrollDirection direction;
-        float previousX = event.getHistoricalX(historySize - 1);
-        float previousY = event.getHistoricalY(historySize - 1);
-        float diffX = event.getX() - previousX;
-        float diffY = event.getY() - previousY;
-        if (Math.abs(diffX) > Math.abs(diffY)) {
-            direction = diffX > 0F ? ScrollDirection.RIGHT : ScrollDirection.LEFT;
-        } else {
-            direction = diffY > 0F ? ScrollDirection.BOTTOM : ScrollDirection.TOP;
+    private void handleUpAction(MotionEvent event) {
+        if (clickTracker > 0) {
+            for (D3Drawable drawable : drawables) {
+                drawable.onClick(event.getX(), event.getY());
+            }
         }
-        for (D3Drawable drawable : drawables) {
-            drawable.onScroll(direction, previousX, previousY, diffX, diffY);
-        }
+    }
+
+    private void handleDownAction(MotionEvent event) {
+        isScrollInitialized = false;
+        isPinchInitialized = false;
+        clickTracker = event.getPointerCount() == 1 ? DEFAULT_CLICK_ACTIONS_NUMBER : 0;
+    }
+
+    private void handlePointerDownAction() {
+        isScrollInitialized = false;
+        isPinchInitialized = false;
+        clickTracker = 0;
     }
 
     @Override public void surfaceCreated(SurfaceHolder holder) {

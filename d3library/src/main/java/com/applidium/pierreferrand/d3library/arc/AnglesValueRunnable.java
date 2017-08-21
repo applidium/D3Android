@@ -115,10 +115,9 @@ public class AnglesValueRunnable<T> extends ValueRunnable<Angles> {
                 .padAngle)
                 * computedWeights[arc.data.length - 1] / totalWeight;
             angles.startAngles[arc.data.length - 1] = (arc.startAngle.getFloat() - arc
-                .padAngle -
-                angles.drawAngles[arc.data.length - 1]) % CIRCLE_ANGLE;
-            if (angles.startAngles[0] < 0.0F) {
-                angles.startAngles[0] += CIRCLE_ANGLE;
+                .padAngle - angles.drawAngles[arc.data.length - 1]) % CIRCLE_ANGLE;
+            if (angles.startAngles[arc.data.length - 1] < 0.0F) {
+                angles.startAngles[arc.data.length - 1] += CIRCLE_ANGLE;
             }
             for (int i = arc.data.length - 2; i >= arc.data.length / 2; i--) {
                 angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * arc.padAngle) *

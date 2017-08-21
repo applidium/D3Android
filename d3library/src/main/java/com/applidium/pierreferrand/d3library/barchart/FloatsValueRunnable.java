@@ -2,14 +2,14 @@ package com.applidium.pierreferrand.d3library.barchart;
 
 import android.support.annotation.NonNull;
 
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
 
 class FloatsValueRunnable<T> extends ValueRunnable<float[]> {
     private static final String DATA_ERROR = "Data should not be null";
 
     @NonNull private final D3BarChart<T> barChart;
-    @NonNull private D3DataMapperFunction<T> mapper;
+    @NonNull private D3FloatDataMapperFunction<T> mapper;
 
     FloatsValueRunnable(@NonNull D3BarChart<T> barChart) {
         this.barChart = barChart;
@@ -19,7 +19,7 @@ class FloatsValueRunnable<T> extends ValueRunnable<float[]> {
         value = new float[length];
     }
 
-    void setDataMapper(@NonNull D3DataMapperFunction<T> mapper) {
+    void setDataMapper(@NonNull D3FloatDataMapperFunction<T> mapper) {
         this.mapper = mapper;
     }
 

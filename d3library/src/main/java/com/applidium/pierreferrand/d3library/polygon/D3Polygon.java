@@ -26,15 +26,31 @@ public class D3Polygon extends D3Drawable {
     @Nullable float[] y;
     boolean proportional;
 
+    @NonNull private final ValueStorage<Float> offsetX = new ValueStorage<>();
+    @NonNull private final ValueStorage<Float> offsetY = new ValueStorage<>();
+
+    @NonNull private final OffsetRunnable offsetXRunnable = new OffsetRunnable();
+    @NonNull private final OffsetRunnable offsetYRunnable = new OffsetRunnable();
+
     public D3Polygon() {
-        setupPaint();
+        setupPolygon();
     }
 
     public D3Polygon(@NonNull float[] x, @NonNull float[] y) {
         x(x);
         y(y);
+        setupPolygon();
+    }
+
+    public D3Polygon(@NonNull float[] coordinates) {
+        coordinates(coordinates);
+        setupPolygon();
+    }
+
+    private void setupPolygon() {
         setupPaint();
         setupActions();
+        setupDefaultOffset();
     }
 
     private void setupActions() {
@@ -43,26 +59,31 @@ public class D3Polygon extends D3Drawable {
         onPinchAction(null);
     }
 
-    public D3Polygon(@NonNull float[] coordinates) {
-        coordinates(coordinates);
-        setupPaint();
+    private void setupDefaultOffset() {
+        offsetX(new D3FloatFunction() {
+            @Override public float getFloat() {
+                return 0;
+            }
+        });
+        offsetY(new D3FloatFunction() {
+            @Override public float getFloat() {
+                return 0;
+            }
+        });
     }
 
     /**
      * Returns the horizontal coordinates of the Polygon's points.
      */
     public float[] x() {
-        if (x == null) {
-            throw new IllegalStateException(X_ERROR);
-        }
-        return x.clone();
+        return x;
     }
 
     /**
      * Sets the horizontal coordinates of the Polygon's points.
      */
     public D3Polygon x(float[] x) {
-        this.x = x.clone();
+        this.x = x;
         return this;
     }
 
@@ -70,22 +91,38 @@ public class D3Polygon extends D3Drawable {
      * Returns the vertical coordinates of the Polygon's points.
      */
     public float[] y() {
-        if (y == null) {
-            throw new IllegalStateException(Y_ERROR);
-        }
-        return y.clone();
+        return y;
     }
 
     /**
      * Sets the vertical coordinates of the Polygon's points.
      */
     public D3Polygon y(float[] y) {
-        this.y = y.clone();
+        this.y = y;
+        return this;
+    }
+
+    public float offsetX() {
+        return offsetX.getValue();
+    }
+
+    public D3Polygon offsetX(D3FloatFunction offsetX) {
+        offsetXRunnable.setOffsetFunction(offsetX);
+        return this;
+    }
+
+    public float offsetY() {
+        return offsetY.getValue();
+    }
+
+    public D3Polygon offsetY(D3FloatFunction offsetY) {
+        offsetYRunnable.setOffsetFunction(offsetY);
         return this;
     }
 
     /**
-     * Returns the coordinates of the Polygon's points. The array format is [x1, y1, x2, y2, ...]
+     * Returns a copy of the coordinates of the Polygon's points. The array format
+     * is [x1, y1, x2, y2, ...]
      */
     public float[] coordinates() {
         return mergeArrays(x, y);
@@ -101,13 +138,13 @@ public class D3Polygon extends D3Drawable {
     }
 
     /**
-     * Sets the coordinates of the Polygon's points.
+     * Sets the coordinates of the Polygon's points with a copy of the given coordinates.
      * The array format should be [x1, y1, x2, y2, ...]
      */
-    public D3Polygon coordinates(float[] coordinate) {
-        x = new float[coordinate.length / 2];
-        y = new float[coordinate.length / 2];
-        separateArray(coordinate, x, y);
+    public D3Polygon coordinates(float[] coordinates) {
+        x = new float[coordinates.length / 2];
+        y = new float[coordinates.length / 2];
+        separateArray(coordinates, x, y);
         return this;
     }
 
@@ -273,13 +310,18 @@ public class D3Polygon extends D3Drawable {
     public boolean contains(float coordinateX, float coordinateY) {
         float x1;
         float y1;
-        float x0 = x[x.length - 1];
-        float y0 = y[x.length - 1];
+
+        float computedOffsetX = offsetX();
+        float computedOffsetY = offsetY();
+
+        float x0 = x[x.length - 1] + computedOffsetX;
+        float y0 = y[x.length - 1] + computedOffsetY;
+
         boolean inside = false;
 
         for (int i = 0; i < x.length; i++) {
-            x1 = x[i];
-            y1 = y[i];
+            x1 = x[i] + computedOffsetX;
+            y1 = y[i] + computedOffsetY;
             if (((y1 > coordinateY) != (y0 > coordinateY))
                 && (coordinateX < (x0 - x1) * (coordinateY - y1) / (y0 - y1) + x1)) {
                 inside = !inside;
@@ -294,11 +336,18 @@ public class D3Polygon extends D3Drawable {
         if (lazyRecomputing && calculationNeeded() == 0) {
             return;
         }
+        offsetX.setValue(offsetXRunnable);
+        offsetY.setValue(offsetYRunnable);
         bitmapValueStorage.setValue(bitmapValueRunnable);
     }
 
     @Override protected void onDimensionsChange(float width, float height) {
         bitmapValueRunnable.resizeBitmap(width, height);
+    }
+
+    @Override public D3Polygon lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
+        return this;
     }
 
     @Override public void draw(@NonNull Canvas canvas) {

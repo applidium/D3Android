@@ -4,14 +4,13 @@ import android.graphics.Canvas;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.scale.D3Scale;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
@@ -27,7 +26,7 @@ public class D3BoxPlot<T> extends D3Drawable {
     @Nullable private D3FloatFunction offsetX;
     @Nullable private D3Scale<Float> scale;
 
-    @Nullable D3DataMapperFunction<T> dataMapper;
+    @Nullable D3FloatDataMapperFunction<T> dataMapper;
 
     @NonNull private final ValueStorage<Statistics> statistics = new ValueStorage<>();
     @NonNull private final StatisticsComputer<T> statisticsComputer
@@ -192,7 +191,7 @@ public class D3BoxPlot<T> extends D3Drawable {
         return this;
     }
 
-    public D3BoxPlot<T> setDataMapper(@NonNull D3DataMapperFunction<T> dataMapper) {
+    public D3BoxPlot<T> dataMapper(@NonNull D3FloatDataMapperFunction<T> dataMapper) {
         this.dataMapper = dataMapper;
         return this;
     }
@@ -222,6 +221,11 @@ public class D3BoxPlot<T> extends D3Drawable {
     @Override public D3BoxPlot<T> paint(@NonNull Paint paint) {
         super.paint(paint);
         paint.setStyle(Paint.Style.STROKE);
+        return this;
+    }
+
+    @Override public D3BoxPlot<T> lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
         return this;
     }
 

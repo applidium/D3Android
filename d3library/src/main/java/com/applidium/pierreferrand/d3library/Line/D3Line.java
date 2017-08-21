@@ -12,6 +12,7 @@ import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
+import com.applidium.pierreferrand.d3library.mappers.D3FloatDataMapperFunction;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
 import com.applidium.pierreferrand.d3library.scale.LinearInterpolator;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
@@ -31,8 +32,8 @@ public class D3Line<T> extends D3Drawable {
     @NonNull protected float[] lines;
 
     @Nullable protected T[] data;
-    @Nullable private D3DataMapperFunction<T> x;
-    @Nullable private D3DataMapperFunction<T> y;
+    @Nullable private D3FloatDataMapperFunction<T> x;
+    @Nullable private D3FloatDataMapperFunction<T> y;
 
     @NonNull protected Interpolator interpolator;
 
@@ -84,7 +85,7 @@ public class D3Line<T> extends D3Drawable {
     /**
      * Sets an array with the horizontal coordinates of the points of the Line.
      */
-    public D3Line<T> x(@NonNull D3DataMapperFunction<T> x) {
+    public D3Line<T> x(@NonNull D3FloatDataMapperFunction<T> x) {
         this.x = x;
         xValueStorage.setMapper(x);
         return this;
@@ -103,7 +104,7 @@ public class D3Line<T> extends D3Drawable {
     /**
      * Sets an array with the vertical coordinates of the points of the Line.
      */
-    public D3Line<T> y(D3DataMapperFunction<T> y) {
+    public D3Line<T> y(D3FloatDataMapperFunction<T> y) {
         this.y = y;
         yValueStorage.setMapper(y);
         return this;

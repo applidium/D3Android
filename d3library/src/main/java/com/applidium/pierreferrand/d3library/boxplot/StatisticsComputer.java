@@ -35,6 +35,9 @@ class StatisticsComputer<T> extends ValueRunnable<Statistics> {
     }
 
     private void computeStatistics() {
+        if (boxPlot.data.length == 0) {
+            return;
+        }
         int i = 0;
         float swap;
         while (i < boxPlot.data.length - 1) {
@@ -54,8 +57,8 @@ class StatisticsComputer<T> extends ValueRunnable<Statistics> {
             (floatData[floatData.length / 2 - 1] + floatData[floatData.length / 2]) / 2F :
             floatData[floatData.length / 2];
 
-        value.lowerQuartile = floatData[Math.round((float) floatData.length / 4F)];
-        value.upperQuartile = floatData[Math.round((float) floatData.length * 3F / 4F)];
+        value.lowerQuartile = floatData[Math.round((float) (floatData.length - 1)/ 4F)];
+        value.upperQuartile = floatData[Math.round((float) (floatData.length - 1) * 3F / 4F)];
     }
 
     private void computeCoordinates() {
