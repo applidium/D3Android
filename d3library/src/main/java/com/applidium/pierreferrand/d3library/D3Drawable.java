@@ -1,7 +1,6 @@
 package com.applidium.pierreferrand.d3library;
 
 import android.graphics.Canvas;
-import android.support.annotation.Nullable;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
@@ -16,6 +15,7 @@ import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 
 public abstract class D3Drawable {
     private static final float DEFAULT_STROKE_WIDTH = 5.0F;
+    private static final int MAX_REDRAW_NEEDED = 4;
 
     @Nullable private D3FloatFunction leftLimit;
     @Nullable private D3FloatFunction rightLimit;
@@ -26,10 +26,42 @@ public abstract class D3Drawable {
     private float width;
     private int canvasState;
 
-    @Nullable private OnClickAction onClickAction;
-    @Nullable private OnScrollAction onScrollAction;
-    @Nullable private OnPinchAction onPinchAction;
+    protected boolean lazyRecomputing = true;
+    protected int calculationNeeded = 1;
+
     @NonNull protected Paint paint;
+
+    @Nullable private OnClickAction onClickAction = new OnClickAction() {
+        @Override public void onClick(float x, float y) {
+            updateNeeded();
+        }
+    };
+
+    @Nullable private OnScrollAction onScrollAction = new OnScrollAction() {
+        @Override public void onScroll(
+            ScrollDirection direction,
+            float coordinateX,
+            float coordinateY,
+            float dX,
+            float dY
+        ) {
+            updateNeeded();
+        }
+    };
+
+    @Nullable private OnPinchAction onPinchAction = new OnPinchAction() {
+        @Override public void onPinch(
+            PinchType pinchType,
+            float coordinateStaticX,
+            float coordinateStaticY,
+            float coordinateMobileX,
+            float coordinateMobileY,
+            float dX,
+            float dY
+        ) {
+            updateNeeded();
+        }
+    };
 
     /**
      * This method must be called in the constructor of each D3Drawable in order to setup
@@ -65,6 +97,10 @@ public abstract class D3Drawable {
     final void setDimensions(float height, float width) {
         this.height = height;
         this.width = width;
+        onDimensionsChange(width, height);
+    }
+
+    protected void onDimensionsChange(float width, float height) {
     }
 
     /**
@@ -184,5 +220,27 @@ public abstract class D3Drawable {
         if (leftLimit != null) {
             canvas.restoreToCount(canvasState);
         }
+        calculationNeeded = lazyRecomputing ? Math.max(calculationNeeded - 1, 0) : 1;
+    }
+
+    /**
+     * If lazyRecomputing is false, each time the Drawable should draw itself, it
+     * will first recompute all data. If it is true, the Drawable will recompute its data only
+     * when {@link #updateNeeded()} is called.
+     * Setting this property to true can accelerate the drawing process but must be set to false
+     * when data can change between two drawing loops.
+     * The property is set to true by default.
+     */
+    public D3Drawable lazyRecomputing(boolean lazyRecomputing) {
+        this.lazyRecomputing = lazyRecomputing;
+        return this;
+    }
+
+    /**
+     * Notify the Drawable that he must recompute its data. It is useful only when the Drawable
+     * has lazy recomputing enable. See {@link #lazyRecomputing(boolean)} for more information.
+     */
+    public final void updateNeeded() {
+        calculationNeeded = lazyRecomputing ? Math.min(calculationNeeded + 1, MAX_REDRAW_NEEDED) : 1;
     }
 }

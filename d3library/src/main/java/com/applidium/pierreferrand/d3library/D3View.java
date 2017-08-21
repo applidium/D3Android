@@ -8,18 +8,32 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
+import android.view.Surface;
+import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
 import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
+import com.applidium.pierreferrand.d3library.threading.ThreadPool;
 
 import java.util.ArrayList;
 import java.util.List;
 
-public class D3View extends SurfaceView implements Runnable {
-    @NonNull private Thread thread;
+public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callback {
+    /**
+     * Allows to have a proper click action, and to disable the transformation of a click action
+     * into a scroll action when the user moves a little his finger.
+     */
+    private static final int DEFAULT_CLICK_ACTIONS_NUMBER = 3;
     private boolean mustRun = true;
+    private boolean initialized;
+    private boolean isSurfaceCreated;
+    private final Object surfaceKey = new Object();
+
+    private Object key = new Object();
+
+    private boolean needRedraw = true;
 
     /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
@@ -27,7 +41,7 @@ public class D3View extends SurfaceView implements Runnable {
      */
     @NonNull private final Handler handler;
 
-    private boolean clickTracker;
+    private int clickTracker;
 
     @NonNull private final List<D3Drawable> drawables;
     @NonNull public final List<Action> afterDrawActions;
@@ -38,12 +52,12 @@ public class D3View extends SurfaceView implements Runnable {
         drawables = new ArrayList<>();
         afterDrawActions = new ArrayList<>();
         handler = new Handler(Looper.getMainLooper());
-        launchDisplay();
+        initialized = false;
+        getHolder().addCallback(this);
     }
 
     private void launchDisplay() {
-        thread = new Thread(this);
-        thread.start();
+        ThreadPool.execute(this);
     }
 
     /**
@@ -72,7 +86,9 @@ public class D3View extends SurfaceView implements Runnable {
      */
     public void onResume() {
         mustRun = true;
-        launchDisplay();
+        if (initialized) {
+            launchDisplay();
+        }
     }
 
     /**
@@ -87,13 +103,29 @@ public class D3View extends SurfaceView implements Runnable {
      */
     @Override public void run() {
         while (mustRun) {
-            if (!getHolder().getSurface().isValid()) {
-                continue;
+            if (!needRedraw) {
+                try {
+                    synchronized (key) {
+                        key.wait();
+                    }
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
             }
-            Canvas c = getHolder().lockCanvas();
-            if (c != null) {
-                draw(c);
-                getHolder().unlockCanvasAndPost(c);
+            if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.M) {
+                return;
+            }
+            synchronized (surfaceKey) {
+                if (!isSurfaceCreated) {
+                    continue;
+                }
+                Surface surface = getHolder().getSurface();
+                Canvas c = surface.lockHardwareCanvas();
+
+                if (c != null) {
+                    draw(c);
+                    getHolder().getSurface().unlockCanvasAndPost(c);
+                }
             }
         }
     }
@@ -103,15 +135,16 @@ public class D3View extends SurfaceView implements Runnable {
      */
     @Override public void draw(Canvas canvas) {
         super.draw(canvas);
-        canvas.drawRGB(255, 255, 255);
+        needRedraw = false;
         for (D3Drawable drawable : drawables) {
             drawable.prepareParameters();
         }
+        canvas.drawRGB(255, 255, 255);
         for (D3Drawable drawable : drawables) {
-            drawable.setDimensions(getHeight(), getWidth());
             drawable.preDraw(canvas);
             drawable.draw(canvas);
             drawable.postDraw(canvas);
+            needRedraw = needRedraw || drawable.calculationNeeded > 0;
         }
         for (final Action action : afterDrawActions) {
             handler.post(new Runnable() {
@@ -126,6 +159,10 @@ public class D3View extends SurfaceView implements Runnable {
      * This inner method should not be called
      */
     @Override public boolean onTouchEvent(MotionEvent event) {
+        needRedraw = true;
+        synchronized (key) {
+            key.notifyAll();
+        }
         switch (event.getAction() & MotionEvent.ACTION_MASK) {
             case MotionEvent.ACTION_MOVE:
                 return handleMoveAction(event);
@@ -150,17 +187,17 @@ public class D3View extends SurfaceView implements Runnable {
             return true;
         }
         if (event.getPointerCount() == 2) {
-            clickTracker = false;
+            clickTracker = 0;
             handlePinchMovement(event);
         } else if (event.getPointerCount() == 1) {
-            clickTracker = false;
+            clickTracker = Math.max(clickTracker - 1, 0);
             handleScrollMovement(event, historySize);
         }
         return false;
     }
 
     private void handleUpAction(MotionEvent event) {
-        if (clickTracker) {
+        if (clickTracker > 0) {
             for (D3Drawable drawable : drawables) {
                 drawable.onClick(event.getX(), event.getY());
             }
@@ -168,11 +205,11 @@ public class D3View extends SurfaceView implements Runnable {
     }
 
     private void handleDownAction(MotionEvent event) {
-        clickTracker = event.getPointerCount() == 1;
+        clickTracker = event.getPointerCount() == 1 ? DEFAULT_CLICK_ACTIONS_NUMBER : 0;
     }
 
     private void handlePointerDownAction() {
-        clickTracker = false;
+        clickTracker = 0;
     }
 
     private void handlePinchMovement(@NonNull MotionEvent event) {
@@ -261,5 +298,26 @@ public class D3View extends SurfaceView implements Runnable {
         for (D3Drawable drawable : drawables) {
             drawable.onScroll(direction, previousX, previousY, diffX, diffY);
         }
+    }
+
+    @Override public void surfaceCreated(SurfaceHolder holder) {
+        launchDisplay();
+        initialized = true;
+        synchronized (surfaceKey) {
+            isSurfaceCreated = true;
+        }
+    }
+
+    @Override public void surfaceChanged(SurfaceHolder holder, int format, int width, int height) {
+        for (D3Drawable drawable : drawables) {
+            drawable.setDimensions(getHeight(), getWidth());
+        }
+    }
+
+    @Override public void surfaceDestroyed(SurfaceHolder holder) {
+        synchronized (surfaceKey) {
+            isSurfaceCreated = false;
+        }
+        onPause();
     }
 }
