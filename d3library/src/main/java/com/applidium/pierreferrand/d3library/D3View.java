@@ -12,7 +12,6 @@ import android.view.Surface;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 
-import com.applidium.pierreferrand.d3library.action.Action;
 import com.applidium.pierreferrand.d3library.action.PinchType;
 import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.threading.ThreadPool;
@@ -26,6 +25,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
      * into a scroll action when the user moves a little his finger.
      */
     private static final int DEFAULT_CLICK_ACTIONS_NUMBER = 3;
+    private static final int MINIMUM_TIME = 16;
     private boolean mustRun = true;
     private boolean initialized;
     private boolean isSurfaceCreated;
@@ -34,6 +34,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private Object key = new Object();
 
     private boolean needRedraw = true;
+    private long lastDraw = System.currentTimeMillis();
 
     /**
      * Allows to make post-run actions be executed by the main thread, so post-run actions
@@ -44,7 +45,7 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
     private int clickTracker;
 
     @NonNull private final List<D3Drawable> drawables;
-    @NonNull public final List<Action> afterDrawActions;
+    @NonNull public final List<Runnable> afterDrawActions;
 
 
     public D3View(Context context, @Nullable AttributeSet attrs) {
@@ -130,6 +131,22 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
         }
     }
 
+    private void sleepIfNeeded() {
+        long now = System.currentTimeMillis();
+        long diff = now - lastDraw;
+        if (diff < MINIMUM_TIME) {
+            try {
+                Thread.sleep(MINIMUM_TIME - diff);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+        if ((System.currentTimeMillis() - lastDraw) < MINIMUM_TIME) {
+            throw new IllegalStateException();
+        }
+        lastDraw = now;
+    }
+
     /**
      * This inner method should not be called.
      */
@@ -140,18 +157,15 @@ public class D3View extends SurfaceView implements Runnable, SurfaceHolder.Callb
             drawable.prepareParameters();
         }
         canvas.drawRGB(255, 255, 255);
+        sleepIfNeeded();
         for (D3Drawable drawable : drawables) {
             drawable.preDraw(canvas);
             drawable.draw(canvas);
             drawable.postDraw(canvas);
-            needRedraw = needRedraw || drawable.calculationNeeded > 0;
+            needRedraw = needRedraw || drawable.calculationNeeded() > 0;
         }
-        for (final Action action : afterDrawActions) {
-            handler.post(new Runnable() {
-                @Override public void run() {
-                    action.execute();
-                }
-            });
+        for (Runnable action : afterDrawActions) {
+            handler.post(action);
         }
     }
 

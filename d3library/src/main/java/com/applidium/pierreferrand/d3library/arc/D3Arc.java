@@ -3,22 +3,19 @@ package com.applidium.pierreferrand.d3library.arc;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Paint;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffXfermode;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.helper.ColorHelper;
-import com.applidium.pierreferrand.d3library.helper.TextHelper;
-import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
+import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
+@SuppressWarnings({"unused", "WeakerAccess"})
 public class D3Arc<T> extends D3Drawable {
     private static final float DEFAULT_LABEL_TEXT_SIZE = 25F;
     private static final float DEFAULT_PAD_ANGLE = 1F;
@@ -27,32 +24,65 @@ public class D3Arc<T> extends D3Drawable {
     private static final String INNER_RADIUS_ERROR = "InnerRadius should not be null.";
     private static final String OUTER_RADIUS_ERROR = "OuterRadius should not be null.";
     private static final String DATA_ERROR = "Data should not be null.";
-    private static final String SUM_WEIGHT_ERROR = "Sum of weight must be different from 0";
-    private static final String ANGLES_ERROR = "Angles should have been calculated";
 
-    @NonNull private int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
+    @NonNull int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
 
-    @Nullable private D3FloatFunction outerRadius;
-    @Nullable private D3FloatFunction innerRadius;
+    @Nullable D3FloatFunction outerRadius;
+    @Nullable D3FloatFunction innerRadius;
 
-    private float padAngle;
+    @NonNull final ValueStorage<Float> computedInnerRadius;
+    @NonNull final ValueStorage<Float> computedOuterRadius;
+    @NonNull final ValueStorage<Float> computedOffsetX;
+    @NonNull final ValueStorage<Float> computedOffsetY;
+    @NonNull private final OuterRadiusValueRunnable outerRadiusValueRunnable;
+    @NonNull private final InnerRadiusValueRunnable innerRadiusValueRunnable;
+    @NonNull private final OffsetXValueRunnable offsetXValueRunnable;
+    @NonNull private final OffsetYValueRunnable offsetYValueRunnable;
 
-    @NonNull private D3FloatFunction offsetX;
-    @NonNull private D3FloatFunction offsetY;
-    @NonNull private D3FloatFunction startAngle;
-    @Nullable private ValueStorage<Angles> preComputedAngles;
+    private boolean optimize = false;
+    float padAngle;
 
-    @Nullable private T[] data;
+    @NonNull D3FloatFunction offsetX;
+    @NonNull D3FloatFunction offsetY;
+    @NonNull D3FloatFunction startAngle;
+    @NonNull final ValueStorage<Angles> preComputedAngles;
+    @NonNull private final ValueStorage<Bitmap> preComputedArc;
+    @NonNull private final ValueStorage<LabelsCoordinates> preComputedLabels;
+
+    @Nullable T[] data;
     @Nullable private D3DataMapperFunction<T> weights;
+    private float[] weightArray;
 
-    @Nullable private String[] labels;
+    @Nullable String[] labels;
     @NonNull private Paint textPaint;
+
+    @NonNull private final BitmapValueRunnable<T> bitmapValueRunnable;
+    @NonNull private final LabelsValueRunnable<T> labelsValueRunnable;
+    @NonNull private final AnglesValueRunnable<T> anglesValueRunnable;
 
     public D3Arc() {
         this(null);
     }
 
     public D3Arc(@Nullable T[] data) {
+        setupPaint();
+        setupActions();
+        preComputedAngles = new ValueStorage<>();
+        preComputedArc = new ValueStorage<>();
+        preComputedLabels = new ValueStorage<>();
+        computedInnerRadius = new ValueStorage<>();
+        computedOuterRadius = new ValueStorage<>();
+        computedOffsetX = new ValueStorage<>();
+        computedOffsetY = new ValueStorage<>();
+
+        bitmapValueRunnable = new BitmapValueRunnable<>(this);
+        labelsValueRunnable = new LabelsValueRunnable<>(this, textPaint);
+        anglesValueRunnable = new AnglesValueRunnable<>(this);
+        innerRadiusValueRunnable = new InnerRadiusValueRunnable(this);
+        outerRadiusValueRunnable = new OuterRadiusValueRunnable(this);
+        offsetXValueRunnable = new OffsetXValueRunnable(this);
+        offsetYValueRunnable = new OffsetYValueRunnable(this);
+
         if (data != null) {
             data(data);
         }
@@ -71,7 +101,6 @@ public class D3Arc<T> extends D3Drawable {
         offsetX(0F);
         offsetY(0F);
         padAngle(DEFAULT_PAD_ANGLE);
-        setupPaint();
     }
 
     @Override protected void setupPaint() {
@@ -81,6 +110,12 @@ public class D3Arc<T> extends D3Drawable {
         textPaint.setStyle(Paint.Style.FILL);
     }
 
+    private void setupActions() {
+        onClickAction(null);
+        onScrollAction(null);
+        onPinchAction(null);
+    }
+
     /**
      * Returns the inner radius of the Arc.
      */
@@ -88,7 +123,7 @@ public class D3Arc<T> extends D3Drawable {
         if (innerRadius == null) {
             throw new IllegalStateException(INNER_RADIUS_ERROR);
         }
-        return innerRadius.getFloat();
+        return computedInnerRadius.getValue();
     }
 
     /**
@@ -118,7 +153,7 @@ public class D3Arc<T> extends D3Drawable {
         if (outerRadius == null) {
             throw new IllegalStateException(OUTER_RADIUS_ERROR);
         }
-        return outerRadius.getFloat();
+        return computedOuterRadius.getValue();
     }
 
     /**
@@ -152,6 +187,9 @@ public class D3Arc<T> extends D3Drawable {
      * Sets the data used by the Arc.
      */
     public D3Arc<T> data(@NonNull T[] data) {
+        weightArray = new float[data.length];
+        anglesValueRunnable.setDataLength(data.length);
+        labelsValueRunnable.setDataLength(data.length);
         this.data = data.clone();
         return this;
     }
@@ -177,7 +215,7 @@ public class D3Arc<T> extends D3Drawable {
      * Returns the horizontal offset of the Arc.
      */
     public float offsetX() {
-        return offsetX.getFloat();
+        return computedOffsetX.getValue();
     }
 
     /**
@@ -204,7 +242,7 @@ public class D3Arc<T> extends D3Drawable {
      * Returns the vertical offset of the Arc.
      */
     public float offsetY() {
-        return offsetY.getFloat();
+        return computedOffsetY.getValue();
     }
 
     /**
@@ -237,11 +275,10 @@ public class D3Arc<T> extends D3Drawable {
         if (weights == null) {
             return new float[0];
         }
-        float[] result = new float[data.length];
         for (int i = 0; i < data.length; i++) {
-            result[i] = weights.compute(data[i], i, data);
+            weightArray[i] = weights.compute(data[i], i, data);
         }
-        return result;
+        return weightArray;
     }
 
     /**
@@ -279,6 +316,10 @@ public class D3Arc<T> extends D3Drawable {
      * method on each data.
      */
     public D3Arc<T> labels(boolean drawLabelsDependingOnData) {
+        if (data == null) {
+            throw new IllegalStateException(DATA_ERROR);
+        }
+
         if (drawLabelsDependingOnData) {
             labels = new String[data.length];
             for (int i = 0; i < data.length; i++) {
@@ -321,9 +362,6 @@ public class D3Arc<T> extends D3Drawable {
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);
         }
-        if (preComputedAngles == null) {
-            throw new IllegalStateException(ANGLES_ERROR);
-        }
         float xCenter = offsetX() + outerRadius();
         float yCenter = offsetY() + outerRadius();
 
@@ -349,7 +387,6 @@ public class D3Arc<T> extends D3Drawable {
         }
         return null;
     }
-
 
     private boolean inAngles(float angle, float startAngle, float drawAngle) {
         if (startAngle + drawAngle > CIRCLE_ANGLE) {
@@ -386,116 +423,69 @@ public class D3Arc<T> extends D3Drawable {
         return this;
     }
 
-    @Override public D3Arc<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3Arc<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Arc<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3Arc<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Arc<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3Arc<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
 
     @Override public void draw(@NonNull Canvas canvas) {
-        drawPie(canvas);
+        if (optimize) {
+            D3ArcDrawer.drawArcs(
+                canvas, innerRadius(), outerRadius(), offsetX(), offsetY(),
+                preComputedAngles.getValue(), paint, colors
+            );
+        } else {
+            canvas.drawBitmap(preComputedArc.getValue(), 0F, 0F, null);
+        }
         drawLabels(canvas);
     }
 
-    private void drawPie(@NonNull Canvas canvas) {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-        if (preComputedAngles == null) {
-            throw new IllegalStateException(ANGLES_ERROR);
-        }
-        float computedOuterRadius = outerRadius();
-        Bitmap bitmap = Bitmap.createBitmap(
-            (int) (2 * computedOuterRadius),
-            (int) (2 * computedOuterRadius), Bitmap.Config.ARGB_8888
-        );
-
-        Canvas c = new Canvas(bitmap);
-        Angles computedAngles = preComputedAngles.getValue();
-        for (int i = 0; i < data.length; i++) {
-            paint.setColor(colors[i % colors.length]);
-            c.drawArc(
-                0F,
-                0F,
-                2F * computedOuterRadius,
-                2F * computedOuterRadius,
-                computedAngles.startAngles[i],
-                computedAngles.drawAngles[i],
-                true,
-                paint
-            );
-        }
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
-        c.drawCircle(computedOuterRadius, computedOuterRadius, innerRadius(), paint);
-        paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.SRC));
-
-        canvas.drawBitmap(bitmap, offsetX(), offsetY(), null);
+    @Override public D3Arc<T> lazyRecomputing(boolean lazyRecomputing) {
+        super.lazyRecomputing(lazyRecomputing);
+        return this;
     }
-
 
     private void drawLabels(@NonNull Canvas canvas) {
         if (labels == null) {
             return;
         }
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
 
-        if (preComputedAngles == null) {
-            throw new IllegalStateException(ANGLES_ERROR);
-        }
-        Angles computedAngles = preComputedAngles.getValue();
-
-        float radius = (outerRadius() + innerRadius()) / 2F;
-        float realOffsetX = offsetX() + outerRadius();
-        float realOffsetY = offsetY() + outerRadius();
-        float currentAngle;
-        float nextAngle;
-        float radianAngle;
-        float coordinateX;
-        float coordinateY;
+        float offsetX = offsetX();
+        float offsetY = offsetY();
+        float[] coordinatesX = labelsValueRunnable.getValue().coordinatesX;
+        float[] coordinatesY = labelsValueRunnable.getValue().coordinatesY;
 
         for (int i = 0; i < data.length; i++) {
             textPaint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
-            currentAngle = computedAngles.startAngles[i];
-            nextAngle = currentAngle + computedAngles.drawAngles[i];
-            radianAngle = (float) Math.toRadians(-(nextAngle + currentAngle) / 2F);
-
-            coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
-            coordinateX -= textPaint.measureText(labels[i]) / 2F;
-            coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
-            coordinateY += TextHelper.getTextHeight(labels[i], textPaint) / 2F;
-            canvas.drawText(labels[i], coordinateX, coordinateY, textPaint);
+            canvas.drawText(
+                labels[i], coordinatesX[i] + offsetX, coordinatesY[i] + offsetY, textPaint
+            );
         }
     }
 
     @Override public void prepareParameters() {
-        final Object key = new Object();
-        preComputedAngles = new ValueStorage<>(
-            new ValueRunnable<Angles>() {
-                Angles value;
-
-                @Override public Angles getValue() {
-                    return value;
-                }
-
-                @Override public void run() {
-                    synchronized (key) {
-                        value = computeStartAngle();
-                        key.notifyAll();
-                    }
-                }
-            }, key
-        );
+        if (lazyRecomputing && calculationNeeded() == 0) {
+            return;
+        }
+        computedOffsetX.setValue(offsetXValueRunnable);
+        computedOffsetY.setValue(offsetYValueRunnable);
+        computedInnerRadius.setValue(innerRadiusValueRunnable);
+        computedOuterRadius.setValue(outerRadiusValueRunnable);
+        preComputedAngles.setValue(anglesValueRunnable);
+        preComputedLabels.setValue(labelsValueRunnable);
+        if (!optimize) {
+            preComputedArc.setValue(bitmapValueRunnable);
+        }
     }
 
     @Override public D3Arc<T> setClipRect(
@@ -513,46 +503,19 @@ public class D3Arc<T> extends D3Drawable {
         return this;
     }
 
-    private Angles computeStartAngle() {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-        float[] computedWeights = weights();
-        float totalWeight = 0F;
-        for (int i = 0; i < data.length; i++) {
-            totalWeight += computedWeights[i];
-        }
-        if (totalWeight == 0F) {
-            throw new IllegalStateException(SUM_WEIGHT_ERROR);
-        }
-
-        Angles angles = new Angles(data.length);
-        angles.startAngles[0] = (startAngle.getFloat() - padAngle / 2F) % CIRCLE_ANGLE;
-        if (angles.startAngles[0] < 0.0F) {
-            angles.startAngles[0] += CIRCLE_ANGLE;
-        }
-        angles.drawAngles[0] = (CIRCLE_ANGLE - data.length * padAngle)
-            * computedWeights[0] / totalWeight;
-
-        for (int i = 1; i < data.length; i++) {
-            angles.startAngles[i] = (angles.startAngles[i - 1] + angles.drawAngles[i - 1]
-                + padAngle) % CIRCLE_ANGLE;
-            if (angles.startAngles[i] < 0.0F) {
-                angles.startAngles[i] += CIRCLE_ANGLE;
-            }
-            angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * padAngle) *
-                computedWeights[i] / totalWeight;
-        }
-        return angles;
+    @Override protected void onDimensionsChange(float width, float height) {
+        bitmapValueRunnable.resizeBitmap(width, height);
     }
 
-    private static class Angles {
-        @NonNull float[] startAngles;
-        @NonNull float[] drawAngles;
+    public D3Arc<T> optimize(boolean optimize) {
+        this.optimize = optimize;
+        updateNeeded(2);
+        return this;
+    }
 
-        Angles(int dataNumber) {
-            startAngles = new float[dataNumber];
-            drawAngles = new float[dataNumber];
-        }
+    @Override public D3Arc<T> paint(@NonNull Paint paint) {
+        super.paint(paint);
+        paint.setStyle(Paint.Style.STROKE);
+        return this;
     }
 }

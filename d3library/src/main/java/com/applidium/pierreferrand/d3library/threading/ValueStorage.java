@@ -2,38 +2,60 @@ package com.applidium.pierreferrand.d3library.threading;
 
 public class ValueStorage<T> {
     private T storedValue;
-    private Object synchronisationKey;
+    private final Object synchronisationKey;
+    private final SetValueRunnable runnable;
+    private boolean initialized;
 
-    public ValueStorage(ValueRunnable<T> runnable, Object key) {
+    public ValueStorage() {
         synchronisationKey = new Object();
-        setValue(runnable, key);
+        initialized = false;
+        runnable = new SetValueRunnable();
     }
 
-    public void setValue(ValueRunnable<T> runnable, Object key) {
-        try {
-            synchronized (key) {
-                ThreadPool.execute(runnable);
-                key.wait();
-                storedValue = runnable.getValue();
-                synchronized (synchronisationKey) {
-                    synchronisationKey.notifyAll();
-                }
-            }
-        } catch (InterruptedException e) {
-            e.printStackTrace();
+    public void setValue(final ValueRunnable<T> valueRunnable) {
+        synchronized (synchronisationKey) {
+            initialized = true;
+            storedValue = null;
         }
+        runnable.setRunnable(valueRunnable);
+        ThreadPool.execute(runnable);
     }
 
     public T getValue() {
         try {
-            while (storedValue == null) {
-                synchronized (synchronisationKey) {
+            synchronized (synchronisationKey) {
+                if (!initialized) {
+                    throw new IllegalStateException("Not initialized");
+                }
+                while (storedValue == null) {
                     synchronisationKey.wait();
                 }
+                return storedValue;
             }
         } catch (InterruptedException e) {
             e.printStackTrace();
+            return null;
         }
-        return storedValue;
+    }
+
+    private class SetValueRunnable implements Runnable {
+        private ValueRunnable<T> runnable;
+
+        private void setRunnable(ValueRunnable<T> runnable) {
+            this.runnable = runnable;
+        }
+
+        @Override public void run() {
+            try {
+                runnable.run();
+                runnable.getSemaphore().acquire();
+                synchronized (ValueStorage.this.synchronisationKey) {
+                    storedValue = runnable.getValue();
+                    synchronisationKey.notifyAll();
+                }
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 }
