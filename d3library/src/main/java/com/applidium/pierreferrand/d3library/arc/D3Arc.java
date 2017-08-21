@@ -16,6 +16,8 @@ import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.helper.ColorHelper;
 import com.applidium.pierreferrand.d3library.helper.TextHelper;
+import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 public class D3Arc<T> extends D3Drawable {
     private static final float DEFAULT_LABEL_TEXT_SIZE = 25F;
@@ -25,6 +27,8 @@ public class D3Arc<T> extends D3Drawable {
     private static final String INNER_RADIUS_ERROR = "InnerRadius should not be null.";
     private static final String OUTER_RADIUS_ERROR = "OuterRadius should not be null.";
     private static final String DATA_ERROR = "Data should not be null.";
+    private static final String SUM_WEIGHT_ERROR = "Sum of weight must be different from 0";
+    private static final String ANGLES_ERROR = "Angles should have been calculated";
 
     @NonNull private int[] colors = new int[]{0xFF0000FF, 0xFFFF0000, 0xFF00FF00, 0xFF000000};
 
@@ -35,6 +39,8 @@ public class D3Arc<T> extends D3Drawable {
 
     @NonNull private D3FloatFunction offsetX;
     @NonNull private D3FloatFunction offsetY;
+    @NonNull private D3FloatFunction startAngle;
+    @Nullable private ValueStorage<Angles> preComputedAngles;
 
     @Nullable private T[] data;
     @Nullable private D3DataMapperFunction<T> weights;
@@ -61,6 +67,7 @@ public class D3Arc<T> extends D3Drawable {
                 return Math.min(height(), width()) / 2;
             }
         });
+        startAngle(0F);
         offsetX(0F);
         offsetY(0F);
         padAngle(DEFAULT_PAD_ANGLE);
@@ -311,6 +318,12 @@ public class D3Arc<T> extends D3Drawable {
      * Return null if it does not match any part.
      */
     @Nullable public T dataFromPosition(float x, float y) {
+        if (data == null) {
+            throw new IllegalStateException(DATA_ERROR);
+        }
+        if (preComputedAngles == null) {
+            throw new IllegalStateException(ANGLES_ERROR);
+        }
         float xCenter = offsetX() + outerRadius();
         float yCenter = offsetY() + outerRadius();
 
@@ -318,7 +331,7 @@ public class D3Arc<T> extends D3Drawable {
         float diffY = y - yCenter;
 
         float radius = (float) Math.hypot(diffX, diffY);
-        if (data == null || radius < innerRadius() || radius > outerRadius()) {
+        if (radius < innerRadius() || radius > outerRadius()) {
             return null;
         }
 
@@ -326,25 +339,51 @@ public class D3Arc<T> extends D3Drawable {
         angle += angle < 0F ? Math.PI : 0F;
         angle += diffY < 0F ? Math.PI : 0F;
         angle = (float) (angle * HALF_CIRCLE_ANGLE / Math.PI);
-        angle = CIRCLE_ANGLE - angle;
 
-        float[] computedWeights = this.weights();
-        float totalWeight = 0F;
+        Angles computedAngles = preComputedAngles.getValue();
 
         for (int i = 0; i < data.length; i++) {
-            totalWeight += computedWeights[i];
+            if (inAngles(angle, computedAngles.startAngles[i], computedAngles.drawAngles[i])) {
+                return data[i];
+            }
         }
-        if (totalWeight == 0F) {
-            return null;
-        }
+        return null;
+    }
 
-        float currentAngle = 0F;
-        int indexData = -1;
-        while (currentAngle < angle) {
-            indexData++;
-            currentAngle += CIRCLE_ANGLE * computedWeights[indexData] / totalWeight;
+
+    private boolean inAngles(float angle, float startAngle, float drawAngle) {
+        if (startAngle + drawAngle > CIRCLE_ANGLE) {
+            return (angle > startAngle) || (angle < (startAngle + drawAngle) % CIRCLE_ANGLE);
+        } else {
+            return (angle > startAngle) && (angle < startAngle + drawAngle);
         }
-        return data[indexData];
+    }
+
+    /**
+     * Returns the start angle for the arc
+     */
+    public float startAngle() {
+        return startAngle.getFloat();
+    }
+
+    /**
+     * Sets the start angle for the arc
+     */
+    public D3Arc<T> startAngle(final float startAngle) {
+        startAngle(new D3FloatFunction() {
+            @Override public float getFloat() {
+                return startAngle;
+            }
+        });
+        return this;
+    }
+
+    /**
+     * Sets the start angle for the arc
+     */
+    public D3Arc<T> startAngle(@NonNull D3FloatFunction startAngle) {
+        this.startAngle = startAngle;
+        return this;
     }
 
     @Override public D3Arc<T> onClickAction(@NonNull OnClickAction onClickAction) {
@@ -363,49 +402,37 @@ public class D3Arc<T> extends D3Drawable {
     }
 
     @Override public void draw(@NonNull Canvas canvas) {
-        if (data == null) {
-            throw new IllegalStateException(DATA_ERROR);
-        }
-        float[] computedWeights = weights();
-        float totalWeight = 0F;
-
-        for (int i = 0; i < data.length; i++) {
-            totalWeight += computedWeights[i];
-        }
-        if (totalWeight == 0F) {
-            return;
-        }
-
-        drawPie(canvas, computedWeights, totalWeight);
-        drawLabels(canvas, computedWeights, totalWeight);
+        drawPie(canvas);
+        drawLabels(canvas);
     }
 
-    private void drawPie(@NonNull Canvas canvas, @NonNull float[] weights, float totalWeight) {
+    private void drawPie(@NonNull Canvas canvas) {
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);
         }
+        if (preComputedAngles == null) {
+            throw new IllegalStateException(ANGLES_ERROR);
+        }
         float computedOuterRadius = outerRadius();
-        float currentAngle = -padAngle / 2F;
-
         Bitmap bitmap = Bitmap.createBitmap(
             (int) (2 * computedOuterRadius),
             (int) (2 * computedOuterRadius), Bitmap.Config.ARGB_8888
         );
+
         Canvas c = new Canvas(bitmap);
+        Angles computedAngles = preComputedAngles.getValue();
         for (int i = 0; i < data.length; i++) {
             paint.setColor(colors[i % colors.length]);
-            float drawAngle = (CIRCLE_ANGLE - weights.length * padAngle) * weights[i] / totalWeight;
             c.drawArc(
                 0F,
                 0F,
                 2F * computedOuterRadius,
                 2F * computedOuterRadius,
-                currentAngle,
-                -drawAngle,
+                computedAngles.startAngles[i],
+                computedAngles.drawAngles[i],
                 true,
                 paint
             );
-            currentAngle -= drawAngle + padAngle;
         }
         paint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
         c.drawCircle(computedOuterRadius, computedOuterRadius, innerRadius(), paint);
@@ -415,7 +442,7 @@ public class D3Arc<T> extends D3Drawable {
     }
 
 
-    private void drawLabels(@NonNull Canvas canvas, @NonNull float[] weights, float totalWeight) {
+    private void drawLabels(@NonNull Canvas canvas) {
         if (labels == null) {
             return;
         }
@@ -423,21 +450,94 @@ public class D3Arc<T> extends D3Drawable {
             throw new IllegalStateException(DATA_ERROR);
         }
 
-        float currentAngle = 0F;
+        if (preComputedAngles == null) {
+            throw new IllegalStateException(ANGLES_ERROR);
+        }
+        Angles computedAngles = preComputedAngles.getValue();
+
         float radius = (outerRadius() + innerRadius()) / 2F;
         float realOffsetX = offsetX() + outerRadius();
         float realOffsetY = offsetY() + outerRadius();
+        float currentAngle;
+        float nextAngle;
+        float radianAngle;
+        float coordinateX;
+        float coordinateY;
 
         for (int i = 0; i < data.length; i++) {
             textPaint.setColor(ColorHelper.colorDependingOnBackground(colors[i % colors.length]));
-            float nextAngle = currentAngle + CIRCLE_ANGLE * weights[i] / totalWeight;
-            float radianAngle = (float) Math.toRadians((nextAngle + currentAngle) / 2F);
-            float coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
+            currentAngle = computedAngles.startAngles[i];
+            nextAngle = currentAngle + computedAngles.drawAngles[i];
+            radianAngle = (float) Math.toRadians(-(nextAngle + currentAngle) / 2F);
+
+            coordinateX = realOffsetX + radius * (float) Math.cos(radianAngle);
             coordinateX -= textPaint.measureText(labels[i]) / 2F;
-            float coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
+            coordinateY = realOffsetY - radius * (float) Math.sin(radianAngle);
             coordinateY += TextHelper.getTextHeight(labels[i], textPaint) / 2F;
             canvas.drawText(labels[i], coordinateX, coordinateY, textPaint);
-            currentAngle = nextAngle;
+        }
+    }
+
+    @Override public void prepareParameters() {
+        final Object key = new Object();
+        preComputedAngles = new ValueStorage<>(
+            new ValueRunnable<Angles>() {
+                Angles value;
+
+                @Override public Angles getValue() {
+                    return value;
+                }
+
+                @Override public void run() {
+                    synchronized (key) {
+                        value = computeStartAngle();
+                        key.notifyAll();
+                    }
+                }
+            }, key
+        );
+    }
+
+    private Angles computeStartAngle() {
+        if (data == null) {
+            throw new IllegalStateException(DATA_ERROR);
+        }
+        float[] computedWeights = weights();
+        float totalWeight = 0F;
+        for (int i = 0; i < data.length; i++) {
+            totalWeight += computedWeights[i];
+        }
+        if (totalWeight == 0F) {
+            throw new IllegalStateException(SUM_WEIGHT_ERROR);
+        }
+
+        Angles angles = new Angles(data.length);
+        angles.startAngles[0] = (startAngle.getFloat() - padAngle / 2F) % CIRCLE_ANGLE;
+        if (angles.startAngles[0] < 0.0F) {
+            angles.startAngles[0] += CIRCLE_ANGLE;
+        }
+        angles.drawAngles[0] = (CIRCLE_ANGLE - data.length * padAngle)
+            * computedWeights[0] / totalWeight;
+
+        for (int i = 1; i < data.length; i++) {
+            angles.startAngles[i] = (angles.startAngles[i - 1] + angles.drawAngles[i - 1]
+                + padAngle) % CIRCLE_ANGLE;
+            if (angles.startAngles[i] < 0.0F) {
+                angles.startAngles[i] += CIRCLE_ANGLE;
+            }
+            angles.drawAngles[i] = (CIRCLE_ANGLE - computedWeights.length * padAngle) *
+                computedWeights[i] / totalWeight;
+        }
+        return angles;
+    }
+
+    private static class Angles {
+        @NonNull float[] startAngles;
+        @NonNull float[] drawAngles;
+
+        Angles(int dataNumber) {
+            startAngles = new float[dataNumber];
+            drawAngles = new float[dataNumber];
         }
     }
 }
