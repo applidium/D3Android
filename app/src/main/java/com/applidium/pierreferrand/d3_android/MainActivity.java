@@ -2,33 +2,34 @@ package com.applidium.pierreferrand.d3_android;
 
 import android.app.Activity;
 import android.graphics.Canvas;
-import android.graphics.Paint;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
-import android.util.Log;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.D3View;
-import com.applidium.pierreferrand.d3library.action.OnClickAction;
+import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
+import com.applidium.pierreferrand.d3library.action.OnPinchAction;
+import com.applidium.pierreferrand.d3library.action.OnScrollAction;
+import com.applidium.pierreferrand.d3library.action.PinchType;
+import com.applidium.pierreferrand.d3library.action.ScrollDirection;
 import com.applidium.pierreferrand.d3library.axes.AxisOrientation;
 import com.applidium.pierreferrand.d3library.axes.D3Axis;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.axes.D3RangeFunction;
-import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
-import com.applidium.pierreferrand.d3library.line.D3Line;
+import com.applidium.pierreferrand.d3library.barchart.D3StackBarChart;
 import com.applidium.pierreferrand.d3library.scale.D3Converter;
 
 import net.danlew.android.joda.JodaTimeAndroid;
 
-import org.joda.time.DateTime;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MainActivity extends Activity {
 
     D3View view;
-    D3Axis<Float> leftAxis;
-    D3Axis<Float> timeAxis;
-    D3Line<LightData> lightCurve;
+
+    D3Axis<Integer> numberAxis;
 
     @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -38,143 +39,176 @@ public class MainActivity extends Activity {
 
         view = (D3View) findViewById(R.id.test);
 
-        leftAxis =
-            new D3Axis<Float>(AxisOrientation.RIGHT)
+        numberAxis =
+            new D3Axis<Integer>(AxisOrientation.RIGHT)
                 .offsetX(new D3FloatFunction() {
                     @Override public float getFloat() {
                         return view.getWidth() * 0.05f;
                     }
                 })
-                .converter(new D3Converter<Float>() {
-                    @Override public float convert(Float toConvert) {
+                .converter(new D3Converter<Integer>() {
+                    @Override public float convert(Integer toConvert) {
                         return toConvert;
                     }
 
-                    @Override public Float invert(float toInvert) {
-                        return toInvert;
+                    @Override public Integer invert(float toInvert) {
+                        return (int) toInvert;
                     }
                 })
-                .domain(new Float[]{25f, 730f})
+                .domain(new Integer[]{0, 8000})
                 .range(new D3RangeFunction() {
+                    float[] range = new float[2];
+
                     @Override public float[] getRange() {
-                        return new float[]{view.getHeight() * 0.8f, view.getHeight() * 0.1f};
+                        range[0] = view.getHeight() * 0.8f;
+                        range[1] = view.getHeight() * 0.1f;
+                        return range;
                     }
                 });
 
-        timeAxis =
-            new D3Axis<Float>(AxisOrientation.TOP)
-                .domain(new Float[]{1f, 14f,})
+        final D3Axis<Integer> saleAxis =
+            new D3Axis<Integer>(AxisOrientation.TOP)
+                .domain(new Integer[]{0, 5})
+                .ticks(6)
                 .range(new D3RangeFunction() {
+                    float[] range = new float[2];
+
                     @Override public float[] getRange() {
-                        return new float[]{0.05f * view.getWidth(), 0.95f * view.getWidth()};
+                        range[0] = 0.05f * view.getWidth();
+                        range[1] = 0.95f * view.getWidth();
+                        return range;
                     }
-                }).converter(new D3Converter<Float>() {
-                @Override public float convert(Float toConvert) {
+                }).converter(new D3Converter<Integer>() {
+                @Override public float convert(Integer toConvert) {
                     return toConvert;
                 }
 
-                @Override public Float invert(float toInvert) {
-                    return toInvert;
+                @Override public Integer invert(float toInvert) {
+                    return (int) toInvert;
                 }
             }).offsetY(new D3FloatFunction() {
                 @Override public float getFloat() {
                     return (float) (view.getHeight() * 0.98);
                 }
-            });
-
-        Paint lightPaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        lightPaint.setColor(0XFF00F0F0);
-        lightPaint.setStrokeWidth(12f);
-        lightPaint.setStyle(Paint.Style.STROKE);
-
-        LightData[] lightData = new LightData[500];
-        for (int i = 0; i < lightData.length; i++) {
-            lightData[i] = new LightData(i, (float) Math.random() * 400f + 125f);
-        }
-        lightCurve =
-            new D3Line<>(lightData)
-                .x(new D3DataMapperFunction<LightData>() {
-                    @Override
-                    public float compute(LightData object, int position, LightData[] data) {
-                        return timeAxis.scale().value(object.test);
+            })
+                .onScrollAction(new OnScrollAction() {
+                    @Override public void onScroll(
+                        ScrollDirection direction,
+                        float coordinateX,
+                        float coordinateY,
+                        float dX,
+                        float dY
+                    ) {
                     }
                 })
-                .y(new D3DataMapperFunction<LightData>() {
-                    @Override
-                    public float compute(LightData object, int position, LightData[] data) {
-                        return leftAxis.scale().value(object.value);
+                .onPinchAction(new OnPinchAction() {
+                    @Override public void onPinch(
+                        PinchType pinchType,
+                        float coordinateStaticX,
+                        float coordinateStaticY,
+                        float coordinateMobileX,
+                        float coordinateMobileY,
+                        float dX,
+                        float dY
+                    ) {
                     }
-                }).paint(lightPaint)
-                .setClipRect(
-                    new D3FloatFunction() {
-                        @Override public float getFloat() {
-                            return view.getWidth() * 0.05f;
-                        }
-                    },
-                    new D3FloatFunction() {
-                        @Override public float getFloat() {
-                            return 0;
-                        }
-                    },
-                    new D3FloatFunction() {
-                        @Override public float getFloat() {
-                            return view.getWidth();
+                });
 
-                        }
-                    },
-                    new D3FloatFunction() {
-                        @Override public float getFloat() {
-                            return (float) (view.getHeight() * 0.98);
-                        }
+        Sales[] sales = new Sales[]{
+            new Sales(1, 3840, 1920, 960, 400),
+            new Sales(2, 1600, 1440, 960, 400),
+            new Sales(3, 640, 960, 940, 400),
+            new Sales(4, 320, 480, 640, 400)
+        };
+
+        D3StackBarChart<Sales> stackBarChart =
+            new D3StackBarChart<>(sales, 4)
+                .x(new D3DataMapperFunction<Sales>() {
+                    @Override public float compute(
+                        Sales object, int position, Sales[] data
+                    ) {
+                        return saleAxis.scale().value(object.sale);
                     }
-                )
-                .onClickAction(
-                    new OnClickAction() {
-                        boolean lazyRecomputing = true;
-
-                        @Override public void onClick(float X, float Y) {
-                            lazyRecomputing = !lazyRecomputing;
-                            lightCurve.lazyRecomputing(lazyRecomputing);
-                        }
+                })
+                .y(new D3DataMapperFunction<Sales>() {
+                    @Override public float compute(
+                        Sales object, int position, Sales[] data
+                    ) {
+                        return numberAxis.scale().value(0);
                     }
-                );
-
-        Paint temperaturePaint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        temperaturePaint.setColor(0XFFFF0000);
-        temperaturePaint.setStrokeWidth(12f);
-
-        view.add(timeAxis.ticks(10));
-        view.add(leftAxis.ticks(10));
-        view.add(lightCurve);
+                })
+                .dataWidth(100f)
+                .colors(new int[][]{
+                    new int[]{0xFF0000FF},
+                    new int[]{0xFF00FF00},
+                    new int[]{0xFF0000FF},
+                    new int[]{0xFFFF0000},
+                    });
+        List<D3DataMapperFunction<Sales>> heights = new ArrayList<>();
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
+                @Override public float compute(
+                    Sales object, int position, Sales[] data
+                ) {
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.apples);
+                }
+            });
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
+                @Override public float compute(
+                    Sales object, int position, Sales[] data
+                ) {
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.bananas);
+                }
+            });
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
+                @Override public float compute(
+                    Sales object, int position, Sales[] data
+                ) {
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.cherries);
+                }
+            });
+        heights.add(
+            new D3DataMapperFunction<Sales>() {
+                @Override public float compute(
+                    Sales object, int position, Sales[] data
+                ) {
+                    return numberAxis.scale().value(0) - numberAxis
+                        .scale()
+                        .value(object.dates);
+                }
+            });
+        stackBarChart.dataHeight(heights);
+        view.add(numberAxis);
+        view.add(saleAxis);
+        view.add(stackBarChart);
         view.add(new D3Drawable() {
             @Override public void draw(@NonNull Canvas canvas) {
+
             }
         }.lazyRecomputing(false));
-        view.setMinimumTimePerFrame(17);
     }
 
-    private static class LightData {
-        DateTime date;
-        Float value;
-        float test;
+    class Sales {
+        int sale;
+        int apples;
+        int bananas;
+        int cherries;
+        int dates;
 
-        LightData(int sec, float value) {
-            date = new DateTime()
-                .withHourOfDay(11)
-                .withMinuteOfHour(17 + sec / 60)
-                .withSecondOfMinute(sec % 60);
-            test = sec;
-            this.value = value;
+        private Sales(int sale, int apples, int bananas, int cherries, int dates) {
+            this.sale = sale;
+            this.apples = apples;
+            this.bananas = bananas;
+            this.cherries = cherries;
+            this.dates = dates;
         }
-    }
-
-    @Override protected void onPause() {
-        super.onPause();
-        view.onPause();
-    }
-
-    @Override protected void onResume() {
-        super.onResume();
-        view.onResume();
     }
 }

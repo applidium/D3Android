@@ -1,7 +1,7 @@
 package com.applidium.pierreferrand.d3library.polygon;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Path;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
@@ -10,6 +10,7 @@ import com.applidium.pierreferrand.d3library.action.OnClickAction;
 import com.applidium.pierreferrand.d3library.action.OnPinchAction;
 import com.applidium.pierreferrand.d3library.action.OnScrollAction;
 import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
+import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 import java.util.Arrays;
 
@@ -17,9 +18,12 @@ public class D3Polygon extends D3Drawable {
     private static final String X_ERROR = "X should not be null";
     private static final String Y_ERROR = "Y should not be null";
 
-    @Nullable private float[] x;
-    @Nullable private float[] y;
-    private boolean proportional;
+    @NonNull private final ValueStorage<Bitmap> bitmapValueStorage = new ValueStorage<>();
+    @NonNull private final BitmapValueRunnable bitmapValueRunnable = new BitmapValueRunnable(this);
+
+    @Nullable float[] x;
+    @Nullable float[] y;
+    boolean proportional;
 
     public D3Polygon() {
         setupPaint();
@@ -29,6 +33,13 @@ public class D3Polygon extends D3Drawable {
         x(x);
         y(y);
         setupPaint();
+        setupActions();
+    }
+
+    private void setupActions() {
+        onClickAction(null);
+        onScrollAction(null);
+        onPinchAction(null);
     }
 
     public D3Polygon(@NonNull float[] coordinates) {
@@ -122,17 +133,17 @@ public class D3Polygon extends D3Drawable {
         return this;
     }
 
-    @Override public D3Polygon onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3Polygon onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Polygon onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3Polygon onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Polygon onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3Polygon onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
@@ -278,20 +289,18 @@ public class D3Polygon extends D3Drawable {
         return inside;
     }
 
-    @Override public void draw(@NonNull Canvas canvas) {
-        Path path = new Path();
-        path.setFillType(Path.FillType.WINDING);
-        if (proportional) {
-            path.moveTo(x[0] * width(), y[0] * height());
-            for (int i = 1; i < x.length; i++) {
-                path.lineTo(x[i] * width(), y[i] * height());
-            }
-        } else {
-            path.moveTo(x[0], y[0]);
-            for (int i = 1; i < x.length; i++) {
-                path.lineTo(x[i], y[i]);
-            }
+    @Override public void prepareParameters() {
+        if (lazyRecomputing && calculationNeeded() == 0) {
+            return;
         }
-        canvas.drawPath(path, paint);
+        bitmapValueStorage.setValue(bitmapValueRunnable);
+    }
+
+    @Override protected void onDimensionsChange(float width, float height) {
+        bitmapValueRunnable.resizeBitmap(width, height);
+    }
+
+    @Override public void draw(@NonNull Canvas canvas) {
+        canvas.drawBitmap(bitmapValueStorage.getValue(), 0F, 0F, null);
     }
 }

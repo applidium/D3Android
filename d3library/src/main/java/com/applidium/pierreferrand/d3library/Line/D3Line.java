@@ -24,11 +24,11 @@ public class D3Line<T> extends D3Drawable {
     private static final String STORE_ERROR =
         "PrepareParameters should have be called to setup storeX and storeY";
 
-    @NonNull private final ValueStorage<float[]> storeX;
+    @NonNull protected final ValueStorage<float[]> storeX;
     @NonNull private final CoordinatesValueStorage<T> xValueStorage;
-    @NonNull private final ValueStorage<float[]> storeY;
+    @NonNull protected final ValueStorage<float[]> storeY;
     @NonNull private final CoordinatesValueStorage<T> yValueStorage;
-    @NonNull private float[] lines;
+    @NonNull protected float[] lines;
 
     @Nullable protected T[] data;
     @Nullable private D3DataMapperFunction<T> x;
@@ -116,21 +116,23 @@ public class D3Line<T> extends D3Drawable {
         return data;
     }
 
+    protected void setDataStorageDataLength(int length) {
+        xValueStorage.setDataLength(length);
+        yValueStorage.setDataLength(length);
+    }
+
     /**
      * Sets the data used by the Line.
      */
     public D3Line<T> data(@Nullable T[] data) {
+        this.data = data;
         if (data == null) {
-            this.data = null;
-            xValueStorage.setDataLength(0);
-            yValueStorage.setDataLength(0);
+            setDataStorageDataLength(0);
             lines = new float[0];
             return this;
         }
-        xValueStorage.setDataLength(data.length);
-        yValueStorage.setDataLength(data.length);
+        setDataStorageDataLength(data.length);
         lines = new float[4 * (data.length - 1)];
-        this.data = data;
         return this;
     }
 

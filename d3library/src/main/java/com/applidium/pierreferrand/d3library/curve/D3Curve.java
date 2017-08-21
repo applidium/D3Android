@@ -12,7 +12,6 @@ import com.applidium.pierreferrand.d3library.axes.D3FloatFunction;
 import com.applidium.pierreferrand.d3library.line.D3DataMapperFunction;
 import com.applidium.pierreferrand.d3library.line.D3Line;
 import com.applidium.pierreferrand.d3library.scale.Interpolator;
-import com.applidium.pierreferrand.d3library.threading.ValueRunnable;
 import com.applidium.pierreferrand.d3library.threading.ValueStorage;
 
 public class D3Curve<T> extends D3Line<T> {
@@ -23,19 +22,24 @@ public class D3Curve<T> extends D3Line<T> {
     private static final int DEFAULT_POINT_NUMBER = 100;
     private static final int DEFAULT_INDEX_SIZE = 5;
 
-    @Nullable private ValueStorage<float[]> ticksX;
-    @Nullable private ValueStorage<float[]> ticksY;
+    @NonNull final ValueStorage<float[]> ticksX = new ValueStorage<>();
+    @NonNull private final GetTicksXRunnable<T> ticksXRunnable = new GetTicksXRunnable<>(this);
+    @NonNull final ValueStorage<float[]> ticksY = new ValueStorage<>();
+    @NonNull private final GetTicksYRunnable<T> ticksYRunnable = new GetTicksYRunnable<>(this);
 
-    private int pointsNumber = DEFAULT_POINT_NUMBER;
+
+    private int pointsNumber;
 
     public D3Curve() {
         super();
         initInterpolator();
+        pointsNumber(DEFAULT_POINT_NUMBER);
     }
 
     public D3Curve(T[] data) {
         super(data);
         initInterpolator();
+        pointsNumber(DEFAULT_POINT_NUMBER);
     }
 
     private void initInterpolator() {
@@ -48,7 +52,7 @@ public class D3Curve<T> extends D3Line<T> {
                 float[] xData,
                 float[] yData
             ) {
-                if (indexToUse == null || indexToUse.length != yData.length) {
+                if (indexToUse == null) {
                     initIndex(yData.length);
                 }
                 return computeLagrangePolynomialInterpolation(x, xData, yData);
@@ -105,6 +109,9 @@ public class D3Curve<T> extends D3Line<T> {
      */
     public D3Curve<T> pointsNumber(int pointsNumber) {
         this.pointsNumber = pointsNumber;
+        ticksXRunnable.onPointsNumberChange(pointsNumber);
+        ticksYRunnable.onPointsNumberChange(pointsNumber);
+        lines = new float[4 * (pointsNumber - 1)];
         return this;
     }
 
@@ -123,8 +130,13 @@ public class D3Curve<T> extends D3Line<T> {
         return this;
     }
 
-    @Override public D3Curve<T> data(@NonNull T[] data) {
-        this.data = data.clone();
+    @Override public D3Curve<T> data(@Nullable T[] data) {
+        this.data = data;
+        if (data == null) {
+            setDataStorageDataLength(0);
+            return this;
+        }
+        setDataStorageDataLength(data.length);
         return this;
     }
 
@@ -133,17 +145,17 @@ public class D3Curve<T> extends D3Line<T> {
         return this;
     }
 
-    @Override public D3Curve<T> onClickAction(@NonNull OnClickAction onClickAction) {
+    @Override public D3Curve<T> onClickAction(@Nullable OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Curve<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
+    @Override public D3Curve<T> onScrollAction(@Nullable OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Curve<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
+    @Override public D3Curve<T> onPinchAction(@Nullable OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
@@ -151,9 +163,6 @@ public class D3Curve<T> extends D3Line<T> {
     @Override public void draw(@NonNull Canvas canvas) {
         if (data == null) {
             throw new IllegalStateException(DATA_ERROR);
-        }
-        if (ticksX == null || ticksY == null) {
-            throw new IllegalStateException(TICKS_ERROR);
         }
 
         if (data.length < 2) {
@@ -163,16 +172,22 @@ public class D3Curve<T> extends D3Line<T> {
         float[] xDraw = ticksX.getValue();
         float[] yDraw = ticksY.getValue();
 
-        for (int i = 1; i < yDraw.length; i++) {
-            canvas.drawLine(xDraw[i - 1], yDraw[i - 1], xDraw[i], yDraw[i], paint);
+        for (int i = 0; i < pointsNumber - 1; i++) {
+            lines[4 * i] = xDraw[i];
+            lines[4 * i + 1] = yDraw[i];
+            lines[4 * i + 2] = xDraw[i + 1];
+            lines[4 * i + 3] = yDraw[i + 1];
         }
+        canvas.drawLines(lines, paint);
     }
 
     @Override public void prepareParameters() {
-        ticksX = new ValueStorage<>();
-        ticksX.setValue(getTicksXRunnable());
-        ticksY = new ValueStorage<>();
-        ticksY.setValue(getTicksYRunnable());
+        if (lazyRecomputing && calculationNeeded() == 0) {
+            return;
+        }
+        super.prepareParameters();
+        ticksX.setValue(ticksXRunnable);
+        ticksY.setValue(ticksYRunnable);
     }
 
     @Override public D3Curve<T> setClipRect(
@@ -188,47 +203,5 @@ public class D3Curve<T> extends D3Line<T> {
     @Override public D3Curve<T> deleteClipRect() {
         super.deleteClipRect();
         return this;
-    }
-
-    @NonNull private ValueRunnable<float[]> getTicksXRunnable() {
-        return new ValueRunnable<float[]>() {
-            @Override protected void computeValue() {
-                float[] xData = x();
-                float[] xDraw = new float[pointsNumber];
-                xDraw[0] = xData[0];
-                for (int i = 1; i < pointsNumber - 1; i++) {
-                    xDraw[i] = ((pointsNumber - 1 - i) * xData[0] + i * xData[xData
-                        .length - 1]) /
-                        pointsNumber;
-                }
-                xDraw[pointsNumber - 1] = xData[xData.length - 1];
-                value = xDraw;
-            }
-        };
-    }
-
-    @NonNull private ValueRunnable<float[]> getTicksYRunnable() {
-        return new ValueRunnable<float[]>() {
-            @Override protected void computeValue() {
-                if (ticksX == null) {
-                    throw new IllegalStateException(TICKS_X_ERROR);
-                }
-                float[] xData = x();
-                float[] yData = y();
-                float[] xDraw = ticksX.getValue();
-                float[] yDraw = new float[pointsNumber];
-
-                yDraw[0] = interpolator.interpolate(xDraw[0], xData, yData);
-
-                for (int i = 1; i < pointsNumber - 1; i++) {
-                    yDraw[i] = interpolator.interpolate(xDraw[i], xData, yData);
-                }
-
-                yDraw[pointsNumber - 1] = interpolator.interpolate(
-                    xDraw[pointsNumber - 1], xData, yData
-                );
-                value = yDraw;
-            }
-        };
     }
 }
