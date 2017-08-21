@@ -1,9 +1,9 @@
 package com.applidium.pierreferrand.d3library.Line;
 
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.support.annotation.NonNull;
+import android.support.annotation.Nullable;
 
 import com.applidium.pierreferrand.d3library.D3Drawable;
 import com.applidium.pierreferrand.d3library.action.OnClickAction;
@@ -21,44 +21,48 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 
 public class D3Line<T> extends D3Drawable {
+    private static final String X_ERROR = "X should not be null";
+    private static final String DATA_ERROR = "Data should not be null";
+    private static final String Y_ERROR = "Y should not be null";
+    private static final String STORE_ERROR =
+        "PrepareParameters should have be called to setup storeX and storeY";
 
-    private static final float DEFAULT_STROKE_WIDTH = 5.0f;
+    @Nullable private ValueStorage<float[]> storeX;
+    @Nullable private ValueStorage<float[]> storeY;
 
-    private ValueStorage<float[]> storeX;
-    private ValueStorage<float[]> storeY;
+    @Nullable protected T[] data;
+    @Nullable private D3DataMapperFunction<T> x;
+    @Nullable private D3DataMapperFunction<T> y;
 
-    protected T[] data;
-    private D3DataMapperFunction<T> x;
-    private D3DataMapperFunction<T> y;
-
-    protected Paint paint;
-    protected Interpolator interpolator;
+    @NonNull protected Interpolator interpolator;
 
     public D3Line() {
         this(null);
     }
 
-    public D3Line(T[] data) {
-        this.data = data.clone();
+    public D3Line(@Nullable T[] data) {
+        this.data = data != null ? data.clone() : null;
         interpolator = new LinearInterpolator();
         setupPaint();
     }
 
-    private void setupPaint() {
-        paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setColor(new Color().rgb(0, 0, 0));
-        paint.setStyle(Paint.Style.FILL);
-        paint.setStrokeWidth(DEFAULT_STROKE_WIDTH);
-    }
-
-    public float[] x() {
+    /**
+     * Returns an array with the horizontal coordinates of the points of the Line.
+     */
+    @NonNull public float[] x() {
+        if (x == null) {
+            throw new IllegalStateException(X_ERROR);
+        }
         if (storeX != null) {
             return storeX.getValue();
         }
         return compute(x);
     }
 
-    private float[] compute(D3DataMapperFunction<T> mapper) {
+    private float[] compute(@NonNull D3DataMapperFunction<T> mapper) {
+        if (data == null) {
+            throw new IllegalStateException(DATA_ERROR);
+        }
         final float[] result = new float[data.length];
 
         List<Callable<Object>> tasks = new ArrayList<>();
@@ -70,14 +74,17 @@ public class D3Line<T> extends D3Drawable {
     }
 
     private void buildTask(
-        final D3DataMapperFunction<T> mapper,
-        final float[] result,
-        List<Callable<Object>> tasks,
+        @NonNull final D3DataMapperFunction<T> mapper,
+        @NonNull final float[] result,
+        @NonNull List<Callable<Object>> tasks,
         final int k
     ) {
         tasks.add(Executors.callable(
             new Runnable() {
                 @Override public void run() {
+                    if (data == null) {
+                        throw new IllegalStateException(DATA_ERROR);
+                    }
                     for (int i = k; i < result.length; i += ThreadPool.coresNumber) {
                         result[i] = mapper.compute(data[i], i, data);
                     }
@@ -86,70 +93,103 @@ public class D3Line<T> extends D3Drawable {
         ));
     }
 
-    public D3Line<T> x(D3DataMapperFunction<T> function) {
-        x = function;
+    /**
+     * Sets an array with the horizontal coordinates of the points of the Line.
+     */
+    public D3Line<T> x(@NonNull D3DataMapperFunction<T> x) {
+        this.x = x;
         return this;
     }
 
-    public float[] y() {
+    /**
+     * Returns an array with the vertical coordinates of the points of the Line.
+     */
+    @NonNull public float[] y() {
+        if (y == null) {
+            throw new IllegalStateException(Y_ERROR);
+        }
         if (storeY != null) {
             return storeY.getValue();
         }
         return compute(y);
     }
 
-    public D3Line<T> y(D3DataMapperFunction<T> function) {
-        y = function;
+    /**
+     * Sets an array with the vertical coordinates of the points of the Line.
+     */
+    public D3Line<T> y(D3DataMapperFunction<T> y) {
+        this.y = y;
         return this;
     }
 
-    public T[] data() {
-        return data.clone();
+    /**
+     * Returns the data used by the Line.
+     */
+    @Nullable public T[] data() {
+        return data != null ? data.clone() : null;
     }
 
-    public D3Line<T> data(T[] data) {
+    /**
+     * Sets the data used by the Line.
+     */
+    public D3Line<T> data(@NonNull T[] data) {
         this.data = data.clone();
         return this;
     }
 
-    public Interpolator interpolator() {
+    /**
+     * Returns the interpolator used to interpolate values from data.
+     */
+    @NonNull public Interpolator interpolator() {
         return interpolator;
     }
 
-    public D3Line<T> interpolator(Interpolator interpolator) {
+    /**
+     * Sets the interpolator used to interpolate values from data.
+     */
+    public D3Line<T> interpolator(@NonNull Interpolator interpolator) {
         this.interpolator = interpolator;
         return this;
     }
 
+    /**
+     * Returns the float value, interpolated from the horizontal coordinate given.
+     */
     public float interpolateValue(float measuredX) {
-        float[] x = storeX != null ? storeX.getValue() : x();
-        float[] y = storeY != null ? storeY.getValue() : y();
+        float[] computedX = storeX != null ? storeX.getValue() : x();
+        float[] computedY = storeY != null ? storeY.getValue() : y();
         int index = 0;
-        while (index < y.length - 2 && x[index + 1] < measuredX) {
+        while (index < computedY.length - 2 && computedX[index + 1] < measuredX) {
             index++;
         }
         return interpolator.interpolate(
             measuredX,
-            new float[]{x[index], x[index + 1]},
-            new float[]{y[index], y[index + 1]}
+            new float[]{computedX[index], computedX[index + 1]},
+            new float[]{computedY[index], computedY[index + 1]}
         );
     }
 
-    public D3Line<T> paint(Paint paint) {
-        this.paint = paint;
+    @Override public D3Line<T> paint(@NonNull Paint paint) {
+        super.paint(paint);
         return this;
     }
 
-    @Override public void draw(Canvas canvas) {
+    @Override public void draw(@NonNull Canvas canvas) {
+        if (data == null) {
+            throw new IllegalStateException(DATA_ERROR);
+        }
+        if (storeX == null || storeY == null) {
+            throw new IllegalStateException(STORE_ERROR);
+        }
         if (data.length < 2) {
             return;
         }
 
-        float[] x = storeX.getValue();
-        float[] y = storeY.getValue();
+        float[] computedX = storeX.getValue();
+        float[] computedY = storeY.getValue();
 
         for (int i = 1; i < data.length; i++) {
-            canvas.drawLine(x[i - 1], y[i - 1], x[i], y[i], paint);
+            canvas.drawLine(computedX[i - 1], computedY[i - 1], computedX[i], computedY[i], paint);
         }
     }
 
@@ -160,23 +200,23 @@ public class D3Line<T> extends D3Drawable {
         storeY = new ValueStorage<>(buildRunnable(keyY, y), keyY);
     }
 
-    @Override public D3Line<T> onClickAction(OnClickAction onClickAction) {
+    @Override public D3Line<T> onClickAction(@NonNull OnClickAction onClickAction) {
         super.onClickAction(onClickAction);
         return this;
     }
 
-    @Override public D3Line<T> onScrollAction(OnScrollAction onScrollAction) {
+    @Override public D3Line<T> onScrollAction(@NonNull OnScrollAction onScrollAction) {
         super.onScrollAction(onScrollAction);
         return this;
     }
 
-    @Override public D3Line<T> onPinchAction(OnPinchAction onPinchAction) {
+    @Override public D3Line<T> onPinchAction(@NonNull OnPinchAction onPinchAction) {
         super.onPinchAction(onPinchAction);
         return this;
     }
 
     @NonNull private ValueRunnable<float[]> buildRunnable(
-        final Object key, final D3DataMapperFunction<T> mapper
+        @NonNull final Object key, @NonNull final D3DataMapperFunction<T> mapper
     ) {
         return new ValueRunnable<float[]>() {
             float[] value;
