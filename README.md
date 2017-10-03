@@ -6,7 +6,7 @@ D3Android is a customizable Android library which allows to easily display live 
 ## Usage
 Add a D3View in your activity:
 ```
-<com.applidium.pierreferrand.d3library.D3View
+<com.fabernovel.d3library.D3View
 	android:id="@+id/d3view"
 	android:layout_width="match_parent"
 	android:layout_height="match_parent"

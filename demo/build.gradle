@@ -21,7 +21,7 @@ android {
     buildToolsVersion "26.0.0"
 
     defaultConfig {
-        applicationId "com.applidium.pierreferrand.demo"
+        applicationId "com.fabernovel.d3library.demo"
         minSdkVersion 21
         targetSdkVersion 25
         versionCode 1
@@ -55,5 +55,5 @@ dependencies {
     compile "io.norberg:auto-matter:0.13.3"
     testCompile 'junit:junit:4.12'
     compile 'javax.annotation:javax.annotation-api:1.2'
-    compile project(path: ':d3library')
+    compile project(path: ':library')
 }

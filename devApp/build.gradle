@@ -4,7 +4,7 @@ android {
     compileSdkVersion 25
     buildToolsVersion "25.0.2"
     defaultConfig {
-        applicationId "com.applidium.pierreferrand.d3_android"
+        applicationId "com.fabernovel.d3library.d3_android"
         minSdkVersion 21
         targetSdkVersion 25
         versionCode 1
@@ -24,7 +24,7 @@ dependencies {
     androidTestCompile('com.android.support.test.espresso:espresso-core:2.2.2', {
         exclude group: 'com.android.support', module: 'support-annotations'
     })
-    compile project(":d3library")
+    compile project(':library')
     compile 'com.android.support:appcompat-v7:25.2.0'
     compile 'net.danlew:android.joda:2.9.9'
     compile 'com.android.support.constraint:constraint-layout:1.0.1'

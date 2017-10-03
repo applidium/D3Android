@@ -1,4 +1,4 @@
-<manifest package="com.applidium.pierreferrand.d3_android"
+<manifest package="com.fabernovel.d3library.dev_app"
 
           xmlns:android="http://schemas.android.com/apk/res/android"
     >
@@ -18,7 +18,5 @@
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
-
     </application>
-
 </manifest>
