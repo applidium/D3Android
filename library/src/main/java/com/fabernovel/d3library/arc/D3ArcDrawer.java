@@ -18,9 +18,12 @@ package com.fabernovel.d3library.arc;
 
 import android.graphics.Canvas;
 import android.graphics.Paint;
+import android.graphics.RectF;
 import android.support.annotation.NonNull;
 
 final class D3ArcDrawer {
+    private static RectF rectangle = new RectF();
+
     private D3ArcDrawer() {}
 
     static void drawArcs(
@@ -33,11 +36,12 @@ final class D3ArcDrawer {
 
         for (int i = 0; i < angles.drawAngles.length; i++) {
             paint.setColor(colors[i % colors.length]);
+            rectangle.left = offsetX + diffRadius / 2F;
+            rectangle.top = offsetY + diffRadius / 2F;
+            rectangle.right = offsetX + 2F * outerRadius - diffRadius / 2F;
+            rectangle.bottom = offsetY + 2F * outerRadius - diffRadius / 2F;
             canvas.drawArc(
-                offsetX + diffRadius / 2F,
-                offsetY + diffRadius / 2F,
-                offsetX + 2F * outerRadius - diffRadius / 2F,
-                offsetY + 2F * outerRadius - diffRadius / 2F,
+                rectangle,
                 angles.startAngles[i],
                 angles.drawAngles[i],
                 false,
