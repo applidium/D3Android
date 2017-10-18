@@ -1,0 +1,24 @@
+<!--
+  ~ Copyright 2017, Fabernovel Technologies
+  ~
+  ~ Licensed under the Apache License, Version 2.0 (the "License");
+  ~ you may not use this file except in compliance with the License.
+  ~ You may obtain a copy of the License at
+  ~
+  ~     http://www.apache.org/licenses/LICENSE-2.0
+  ~
+  ~ Unless required by applicable law or agreed to in writing, software
+  ~ distributed under the License is distributed on an "AS IS" BASIS,
+  ~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  ~ See the License for the specific language governing permissions and
+  ~ limitations under the License.
+  -->
+
+<resources>
+    <string name="app_name">D3Android</string>
+    <string name="menu_title">D3Android - Demo</string>
+    <string name="object_arcs_activity_message">Click on a fruit to increase its sales. Click elsewhere in the view to increase the sales of a random fruit.</string>
+    <string name="rectangle_actions_activity_message">You can move and resize the rectangle</string>
+    <string name="multiple_areas_activity_message">Click to add generate a new random entry.</string>
+    <string name="drawing_polygon_activity_message">Click to add a point at the end of the polygon. Scroll to add multiple points. Pinch to clean the polygon.</string>
+</resources>
