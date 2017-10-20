@@ -7,16 +7,16 @@ D3Android is a customizable Android library which allows to easily display live 
 Add in your root build.gradle at the end repositories:
 ```
 allprojects {
-		    repositories {
-			        ...
-			        maven { url 'https://jitpack.io' }
-		    }
+    repositories {
+        ...
+	    maven { url 'https://jitpack.io' }
+    }
 }
 ```
 Add to your app build.gradle:
 ```
 dependencies {
-	    compile 'com.github.applidium:d3android:0.0.1'
+    compile 'com.github.applidium:d3android:0.0.1'
 }
 ```
 
