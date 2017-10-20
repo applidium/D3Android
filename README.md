@@ -4,6 +4,23 @@ D3Android
 D3Android is a customizable Android library which allows to easily display live data. It is inspired by the javascript library D3.js.
 
 ## Usage
+Add in your root build.gradle at the end repositories:
+```
+allprojects {
+		    repositories {
+			        ...
+			        maven { url 'https://jitpack.io' }
+		    }
+}
+```
+Add to your app build.gradle:
+```
+dependencies {
+	    compile 'com.github.applidium:d3android:0.0.1'
+}
+```
+
+
 Add a D3View in your activity:
 ```
 <com.fabernovel.d3library.D3View
