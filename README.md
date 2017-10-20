@@ -9,7 +9,7 @@ Add in your root build.gradle at the end repositories:
 allprojects {
     repositories {
         ...
-	    maven { url 'https://jitpack.io' }
+	maven { url 'https://jitpack.io' }
     }
 }
 ```
@@ -24,17 +24,17 @@ dependencies {
 Add a D3View in your activity:
 ```
 <com.fabernovel.d3library.D3View
-	android:id="@+id/d3view"
-	android:layout_width="match_parent"
-	android:layout_height="match_parent"
-	/>
+    android:id="@+id/d3view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    />
 ```
 
 Then add the desired D3Drawable in your activity:
 ```
 public class ExampleActivity extends Activity {
 
-	 @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
+    @Override protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.example_activity);
 
@@ -172,34 +172,33 @@ The D3View class has some options too.
 * When using a lazy drawable, call the updateNeeded method when the Drawable should refresh.
 * Try to avoid allocations in the methods given to the drawables. They would be used each time the drawable needs to be redrawn (up to 60 times per second). Making a lot of allocations force the garbage collector to be called more often and can reduce the performances. For example use:
 ```
-	new D3RangeFunction() {
-		private float[] range = new float[2];
+new D3RangeFunction() {
+    private float[] range = new float[2];
 
-		@Override @Nullable public float[] getRange() {
-			range[0] = [...]
-			range[1] = [...]
-			return range;
-		}
-	}
+    @Override @Nullable public float[] getRange() {
+	range[0] = [...]
+	range[1] = [...]
+	return range;
+    }
+}
 ```
 rather than:
 ```
-	new D3RangeFunction() {
-
-		@Override @Nullable public float[] getRange() {
-			return new float[] {[...], [...]};
-		}
-	}
+new D3RangeFunction() {
+    @Override @Nullable public float[] getRange() {
+	return new float[] {[...], [...]};
+    }
+}
 ```
 If you can, reuse objects rather than allocating new ones.
 * If you use a version of Android with and API greater than 23, do not disable hardware acceleration in the activity to benefit for performance boosts.
 * Use _view.getWidth()_ and _view.getHeight()_ where _view_ is a D3View to get proportionnal dimensions, for example:
 ```
-	new D3FloatFunction() {
-		@Override public float getFloat() {
-			return view.getWidth() / 2F;
-		}
-	}
+new D3FloatFunction() {
+    @Override public float getFloat() {
+	return view.getWidth() / 2F;
+    }
+}
 ```
 * You can customize the Paint used for each drawables by getting it (drawable.paint()), then by setting the desired properties or by using a pre-set paint (drawable.paint(_[...]_)).
 * You can use ValueAnimators to create animations (see GrowingLineChartActivity).
